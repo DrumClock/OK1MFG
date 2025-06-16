@@ -1,6 +1,6 @@
 # Ovládání rotátoru "SEVER"
 
-![Rotator_frame](https://github.com/DrumClock/AutoRotace/blob/main/IMG_panel.jpg)
+![Rotator_frame](https://github.com/DrumClock/OK1MFG/blob/main/Sever_rotator/IMG_panel.jpg)
 
 # Popis
 
@@ -32,7 +32,7 @@
  # tlačítka "Kalibrace"
   Kalibrace nelinearity potenciometru pomocí tlačítek  **`M1/C`**, **`M2/S`**, **`M3/F`** a uložení do EEPROM 
 
- ![Scheme_frame](https://github.com/DrumClock/AutoRotace/blob/main/IMG_kalibrace.jpg)
+ ![Scheme_frame](https://github.com/DrumClock/OK1MFG/blob/main/Sever_rotator/IMG_kalibrace.jpg)
  
   Krátkým stiskem načteme 3 uložené předvolby kalibrace pro různé rotátory <br>
   
@@ -53,15 +53,15 @@
  Po 5 minutách nečinnosti se kalibrace automaticky ukončí (bez restartu MCU)<br>
 
  # Nastavení VHF logu "Tučňák" 
-![Tucnak_frame](https://github.com/DrumClock/AutoRotace/blob/main/Tu%C4%8D%C5%88%C3%A1k%20-%20nastaven%C3%AD%20rot%C3%A1toru.png)
+![Tucnak_frame](https://github.com/DrumClock/OK1MFG/blob/main/Sever_rotator/Tu%C4%8D%C5%88%C3%A1k%20-%20nastaven%C3%AD%20rot%C3%A1toru.png)
 
 Po tomto nastavení je aktivní odeslání azimutu:
 
 **`Alt+R`** - zadání azimutu ručně a odeslání <br><br>
-![alt_r](https://github.com/DrumClock/AutoRotace/blob/main/alt_r.png)
+![alt_r](https://github.com/DrumClock/OK1MFG/blob/main/Sever_rotator/alt_r.png)
  
 **`Ctrl+A`** - odešle např. azimut 195 st. ze zadaného čtverce JN51AD <br><br>
-![ctrl_a](https://github.com/DrumClock/AutoRotace/blob/main/ctrl_a.png) 
+![ctrl_a](https://github.com/DrumClock/OK1MFG/blob/main/Sever_rotator/ctrl_a.png) 
 
 <br><br>
 
@@ -69,12 +69,12 @@ Po tomto nastavení je aktivní odeslání azimutu:
 
 <br><br>
 # Schéma:
-![Scheme_frame](https://github.com/DrumClock/AutoRotace/blob/main/Arduino_Sever_2.png)
+![Scheme_frame](https://github.com/DrumClock/OK1MFG/blob/main/Sever_rotator/Arduino_Sever_2.png)
 
 # MAPA z JN69NX
 - přiložený soubor **`mapa JN69NX.cdr`** je pro grafický editor **`CorelDraw`** 
 
-![mapa_frame](https://github.com/DrumClock/AutoRotace/blob/main/mapa.png) 
+![mapa_frame](https://github.com/DrumClock/OK1MFG/blob/main/Sever_rotator/mapa.png) 
 
 # složka CAD
 - obsahuje CAD soubory pro ohybaní plechů a 3D tisk dílů
