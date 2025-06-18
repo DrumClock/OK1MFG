@@ -1,27 +1,3 @@
-/*
-Tempo „PARIS“
-Při vysílání Morseovy abecedy v akustické podobě se používají následující pravidla:
-
-- základní časovou jednotkou je délka tečky
-- čárka má stejnou dobu trvání jako tři tečky
-- zvuková pauza uvnitř značky má stejnou dobu trvání jako jedna tečka
-- zvuková pauza mezi značkami má stejnou dobu trvání jako jedna čárka
-- zvuková pauza mezi slovy má stejnou dobu trvání jako sedm teček
-
-Tyto poměry umožňují sluchem zcela spolehlivě rozlišit tečku od čárky i druh akustické pauzy.
-Za další, poměr celkové doby trvání vysílání tečky nebo čárky včetně pauzy uvnitř značky je 2:1,
-což usnadňuje udržet konstantní rychlost vysílání.
-
-Pro určení rychlosti vysílání se bere jako reference pětipísmenné slovo „PARIS“ 
-(celkem 10 teček, 4 čárky, 4 mezery). 
-Celková doba jeho odvysílání včetně mezery za slovem je tedy 50 základních jednotek (délek teček).
-Pokud tedy například hovoříme o tempu vysílání 12 slov za minutu (WPM, words per minute),
-odpovídá to právě rychlosti průměrně jednoho písmene (znaku) za sekundu (12*5 = 60 znaků za minutu),
-délka tečky je 60/(12*50) = 0,1 sekundy.
-
-*/
-
-
 #include <LiquidCrystal_I2C.h>
 #include <Encoder.h>
 #include <EEPROM.h>
@@ -77,8 +53,8 @@ const MorseCode morseTable[] = {
     {'Z', "--.."}, {'0', "-----"}, {'1', ".----"}, {'2', "..---"}, 
     {'3', "...--"}, {'4', "....-"}, {'5', "....."}, {'6', "-...."}, 
     {'7', "--..."}, {'8', "---.."}, {'9', "----."}, {'?', "..--.."}, 
-    {'/', "-..-."}, {'=', "-...-"}, {',', "--..--"}, {'.', ".-.-.-"},
-    {'*', "*"}, {' ', " "}, {'@',".--.-."}, {'!', "-.-.--"}
+    {'/', "--..-."}, {'=', "-...-"}, {',', "--..--"}, {'.', ".-.-.-"},
+    {'*', "*"}, {' ', " "}
 };
 
 const int morseTableSize = sizeof(morseTable) / sizeof(morseTable[0]);
@@ -136,11 +112,9 @@ void buzzerOff() {
 
 void updateDitLength() {
   ditLength = 1200 / wpm;
-  charGap = ditLength * 3;
+  charGap = ditLength * 3;  // mezera mezi znaky je 3 * ditLength
 }
 
-// ------------------------------------------------------------
-// Nové zjednodušené funkce pro morseovku
 // ------------------------------------------------------------
 
 String charToMorse(char c) {
@@ -317,7 +291,7 @@ void handlePlayback() {
         playbackState = WORD_GAP;
         playbackTimer = now;
       } else if (currentPlaybackMorse == "*") {
-        // Speciální dlouhá pomlka (10 ditLength)
+        // Speciální dlouhá pauza (10 ditLength)
         buzzerOff();
         playbackTimer = now;
         playbackState = PLAYING_ELEMENT;
@@ -340,7 +314,7 @@ void handlePlayback() {
         unsigned long elementDuration;
         
         if (currentPlaybackMorse == "*") {
-          // Speciální dlouhá pomlka (10 ditLength) pro znak *
+          // Speciální dlouhá pauza pro znak *
           elementDuration = ditLength * 10;
         } else {
           // Normální elementy
@@ -382,22 +356,22 @@ void handlePlayback() {
       break;
       
     case CHAR_GAP:
-      if (now - playbackTimer >= (ditLength * 2)) { // celková mezera je 3*ditLength, ale už máme 1 z element_gap
+      if (now - playbackTimer >= (ditLength * 3)) { // Opraveno: mezera mezi znaky je 3*ditLength
         playbackIndex++;
         playbackState = IDLE;
       }
       break;
       
     case WORD_GAP:
-      if (now - playbackTimer >= (ditLength * 10)) { // mezera mezi slovy je 10*ditLength
+      if (now - playbackTimer >= (ditLength * 7)) { // Opraveno: mezera mezi slovy je 7*ditLength
         playbackIndex++;
         playbackState = IDLE;
       }
       break;
       
     case LONG_GAP:
-      // Dlouhá mezera po každém 5. znaku (10 * ditLength)
-      if (now - playbackTimer >= (ditLength * 10)) {
+      // Dlouhá mezera po každém 5. znaku (7 * ditLength)
+      if (now - playbackTimer >= (ditLength * 7)) { // Opraveno: bylo 10, teď 7
         playbackIndex++;
         playbackState = IDLE;
       }
