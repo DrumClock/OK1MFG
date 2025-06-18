@@ -8,17 +8,17 @@
 
 #define BUZZER_ACTIVE_LOW true  // nastav na false, pokud je buzzer aktivní na HIGH
 
-#define DIT_PIN 9
-#define DAH_PIN 8
+#define DIT_PIN 2  // pin podporuje "interrupt"
+#define DAH_PIN 3  // pin podporuje "interrupt"
 
-#define BUZZER_PIN 12
+#define ENC_CLK 4
+#define ENC_DT 5
+#define ENC_SW 6
 
-#define CLEAR_BUTTON_PIN 6
-#define PLAY_BUTTON_PIN 7
+#define CLEAR_BUTTON_PIN 7
+#define PLAY_BUTTON_PIN 8
 
-#define ENC_CLK 2
-#define ENC_DT 3
-#define ENC_SW 4
+#define BUZZER_PIN 9
 
 // LCD I2C adresa a velikost
 LiquidCrystal_I2C lcd(0x27, 20, 4);
@@ -45,7 +45,17 @@ struct MorseCode {
 
 // Pole s definicemi morseovky - JEDINÉ MÍSTO PRO VŠECHNY ZNAKY
 const MorseCode morseTable[] = {
-  { 'A', ".-" }, { 'B', "-..." }, { 'C', "-.-." }, { 'D', "-.." }, { 'E', "." }, { 'F', "..-." }, { 'G', "--." }, { 'H', "...." }, { 'I', ".." }, { 'J', ".---" }, { 'K', "-.-" }, { 'L', ".-.." }, { 'M', "--" }, { 'N', "-." }, { 'O', "---" }, { 'P', ".--." }, { 'Q', "--.-" }, { 'R', ".-." }, { 'S', "..." }, { 'T', "-" }, { 'U', "..-" }, { 'V', "...-" }, { 'W', ".--" }, { 'X', "-..-" }, { 'Y', "-.--" }, { 'Z', "--.." }, { '0', "-----" }, { '1', ".----" }, { '2', "..---" }, { '3', "...--" }, { '4', "....-" }, { '5', "....." }, { '6', "-...." }, { '7', "--..." }, { '8', "---.." }, { '9', "----." }, { '?', "..--.." }, { '/', "--..-." }, { '=', "-...-" }, { ',', "--..--" }, { '.', ".-.-.-" }, { '*', "*" }, { ' ', " " }
+  { 'A', ".-" }, { 'B', "-..." }, { 'C', "-.-." }, { 'D', "-.." }, 
+  { 'E', "." }, { 'F', "..-." }, { 'G', "--." }, { 'H', "...." },
+  { 'I', ".." }, { 'J', ".---" }, { 'K', "-.-" }, { 'L', ".-.." }, 
+  { 'M', "--" }, { 'N', "-." }, { 'O', "---" }, { 'P', ".--." }, 
+  { 'Q', "--.-" }, { 'R', ".-." }, { 'S', "..." }, { 'T', "-" }, 
+  { 'U', "..-" }, { 'V', "...-" }, { 'W', ".--" }, { 'X', "-..-" }, 
+  { 'Y', "-.--" }, { 'Z', "--.." }, { '0', "-----" }, { '1', ".----" }, 
+  { '2', "..---" }, { '3', "...--" }, { '4', "....-" }, { '5', "....." }, 
+  { '6', "-...." }, { '7', "--..." }, { '8', "---.." }, { '9', "----." },
+  { '?', "..--.." }, { '/', "--..-." }, { '=', "-...-" }, { ',', "--..--" }, 
+  { '.', ".-.-.-" }, { '*', "*" }, { ' ', " " }
 };
 
 const int morseTableSize = sizeof(morseTable) / sizeof(morseTable[0]);
@@ -381,7 +391,7 @@ void playCustomSequence() {
   int originalWPM = wpm;
   wpm = 30;  // rychlost chcete
   updateDitLength();
-  startPlayback(); 
+  startPlayback();
 }
 
 
@@ -437,8 +447,9 @@ void setup() {
 
   // Čekej až se přehrávání dokončí
   while (isPlaying) {
-    handlePlayback();  // Zpracovává přehrávání
-    delay(1);          // Malá pauza pro stability
+    handlePlayback();   // Zpracovává přehrávání
+    delay(1);           // Malá pauza pro stability
+    receivedText = "";  // smaže text
   }
 
   // vrátí původní WPM
@@ -457,10 +468,8 @@ void loop() {
   unsigned long now = millis();
 
   updateEncoder();
-  handleEncoderButton();
-
-  // Zpracování přehrávání (non-blocking)
-  handlePlayback();
+  handleEncoderButton();  
+  handlePlayback();       // Zpracování přehrávání (non-blocking)
 
   bool ditPressedRaw = digitalRead(paddleReversed ? DAH_PIN : DIT_PIN) == LOW;
   bool dahPressedRaw = digitalRead(paddleReversed ? DIT_PIN : DAH_PIN) == LOW;
@@ -504,7 +513,9 @@ void loop() {
   while (millis() - loopStart < 1)
     ;  // rychlý "non-blocking" delay
 
-  // Kontrola tlačítka pro vymazání
+
+
+  // Kontrola tlačít DELETE
   if (digitalRead(CLEAR_BUTTON_PIN) == LOW) {
     delay(50);  // debounce
     if (digitalRead(CLEAR_BUTTON_PIN) == LOW) {
@@ -521,6 +532,7 @@ void loop() {
       }
     }
   }
+
 
   // Kontrola tlačítka PLAY/STOP
   static bool lastPlayButtonState = HIGH;
