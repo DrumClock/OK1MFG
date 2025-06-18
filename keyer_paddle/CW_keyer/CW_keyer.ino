@@ -39,22 +39,13 @@ const int EEPROM_DIR_ADDR = 1;
 
 // Struktura pro jednu položku morseovky
 struct MorseCode {
-    char character;
-    const char* morse;
+  char character;
+  const char* morse;
 };
 
 // Pole s definicemi morseovky - JEDINÉ MÍSTO PRO VŠECHNY ZNAKY
 const MorseCode morseTable[] = {
-    {'A', ".-"}, {'B', "-..."}, {'C', "-.-."}, {'D', "-.."}, {'E', "."},
-    {'F', "..-."}, {'G', "--."}, {'H', "...."}, {'I', ".."}, {'J', ".---"},
-    {'K', "-.-"}, {'L', ".-.."}, {'M', "--"}, {'N', "-."}, {'O', "---"},
-    {'P', ".--."}, {'Q', "--.-"}, {'R', ".-."}, {'S', "..."}, {'T', "-"},
-    {'U', "..-"}, {'V', "...-"}, {'W', ".--"}, {'X', "-..-"}, {'Y', "-.--"},
-    {'Z', "--.."}, {'0', "-----"}, {'1', ".----"}, {'2', "..---"}, 
-    {'3', "...--"}, {'4', "....-"}, {'5', "....."}, {'6', "-...."}, 
-    {'7', "--..."}, {'8', "---.."}, {'9', "----."}, {'?', "..--.."}, 
-    {'/', "--..-."}, {'=', "-...-"}, {',', "--..--"}, {'.', ".-.-.-"},
-    {'*', "*"}, {' ', " "}
+  { 'A', ".-" }, { 'B', "-..." }, { 'C', "-.-." }, { 'D', "-.." }, { 'E', "." }, { 'F', "..-." }, { 'G', "--." }, { 'H', "...." }, { 'I', ".." }, { 'J', ".---" }, { 'K', "-.-" }, { 'L', ".-.." }, { 'M', "--" }, { 'N', "-." }, { 'O', "---" }, { 'P', ".--." }, { 'Q', "--.-" }, { 'R', ".-." }, { 'S', "..." }, { 'T', "-" }, { 'U', "..-" }, { 'V', "...-" }, { 'W', ".--" }, { 'X', "-..-" }, { 'Y', "-.--" }, { 'Z', "--.." }, { '0', "-----" }, { '1', ".----" }, { '2', "..---" }, { '3', "...--" }, { '4', "....-" }, { '5', "....." }, { '6', "-...." }, { '7', "--..." }, { '8', "---.." }, { '9', "----." }, { '?', "..--.." }, { '/', "--..-." }, { '=', "-...-" }, { ',', "--..--" }, { '.', ".-.-.-" }, { '*', "*" }, { ' ', " " }
 };
 
 const int morseTableSize = sizeof(morseTable) / sizeof(morseTable[0]);
@@ -95,7 +86,12 @@ String currentPlaybackMorse = "";
 int currentPlaybackMorseIndex = 0;
 unsigned long playbackTimer = 0;
 int playedCharCount = 0;  // Nová proměnná pro počítání znaků
-enum PlaybackState { IDLE, PLAYING_ELEMENT, ELEMENT_GAP, CHAR_GAP, WORD_GAP, LONG_GAP };
+enum PlaybackState { IDLE,
+                     PLAYING_ELEMENT,
+                     ELEMENT_GAP,
+                     CHAR_GAP,
+                     WORD_GAP,
+                     LONG_GAP };
 PlaybackState playbackState = IDLE;
 
 // -------------------------
@@ -118,23 +114,23 @@ void updateDitLength() {
 // ------------------------------------------------------------
 
 String charToMorse(char c) {
-    c = toupper(c);
-    
-    for (int i = 0; i < morseTableSize; i++) {
-        if (morseTable[i].character == c) {
-            return morseTable[i].morse;
-        }
+  c = toupper(c);
+
+  for (int i = 0; i < morseTableSize; i++) {
+    if (morseTable[i].character == c) {
+      return morseTable[i].morse;
     }
-    return "";  // neznámý znak
+  }
+  return "";  // neznámý znak
 }
 
 char decodeMorse(String morse) {
-    for (int i = 0; i < morseTableSize; i++) {
-        if (morse == morseTable[i].morse) {
-            return morseTable[i].character;
-        }
+  for (int i = 0; i < morseTableSize; i++) {
+    if (morse == morseTable[i].morse) {
+      return morseTable[i].character;
     }
-    return '*';  // neznámý znak
+  }
+  return '*';  // neznámý znak
 }
 
 // ------------------------------------------------------------
@@ -240,7 +236,7 @@ void startPlayback() {
   String toPlay = receivedText;
   if (toPlay.length() > 60)
     toPlay = toPlay.substring(toPlay.length() - 60);
-    
+
   playbackText = toPlay;
   playbackIndex = 0;
   currentPlaybackMorse = "";
@@ -270,9 +266,9 @@ void handlePlayback() {
     }
     return;
   }
-  
+
   unsigned long now = millis();
-  
+
   switch (playbackState) {
     case IDLE:
       if (playbackIndex >= playbackText.length()) {
@@ -281,11 +277,11 @@ void handlePlayback() {
         buzzerOff();
         return;
       }
-      
+
       // Získej morse kód pro aktuální znak
       currentPlaybackMorse = charToMorse(playbackText[playbackIndex]);
       currentPlaybackMorseIndex = 0;
-      
+
       if (currentPlaybackMorse == " ") {
         // Mezera mezi slovy
         playbackState = WORD_GAP;
@@ -308,11 +304,11 @@ void handlePlayback() {
         playbackState = PLAYING_ELEMENT;
       }
       break;
-      
+
     case PLAYING_ELEMENT:
       {
         unsigned long elementDuration;
-        
+
         if (currentPlaybackMorse == "*") {
           // Speciální dlouhá pauza pro znak *
           elementDuration = ditLength * 10;
@@ -321,16 +317,16 @@ void handlePlayback() {
           char element = currentPlaybackMorse[currentPlaybackMorseIndex];
           elementDuration = (element == '.') ? ditLength : (ditLength * 3);
         }
-        
+
         if (now - playbackTimer >= elementDuration) {
           buzzerOff();
           playbackTimer = now;
           currentPlaybackMorseIndex++;
-          
+
           if (currentPlaybackMorse == "*" || currentPlaybackMorseIndex >= currentPlaybackMorse.length()) {
             // Dokončen celý znak (včetně speciálního znaku *)
             playedCharCount++;  // Zvýšit počítadlo dokončených znaků
-            
+
             // Kontrola, zda je čas na dlouhou mezeru (po každém 5. znaku)
             if (playedCharCount % 5 == 0) {
               playbackState = LONG_GAP;
@@ -344,7 +340,7 @@ void handlePlayback() {
         }
       }
       break;
-      
+
     case ELEMENT_GAP:
       if (now - playbackTimer >= ditLength) {
         // Začni hrát další element
@@ -354,30 +350,40 @@ void handlePlayback() {
         playbackState = PLAYING_ELEMENT;
       }
       break;
-      
+
     case CHAR_GAP:
-      if (now - playbackTimer >= (ditLength * 3)) { // Opraveno: mezera mezi znaky je 3*ditLength
+      if (now - playbackTimer >= (ditLength * 3)) {  // Opraveno: mezera mezi znaky je 3*ditLength
         playbackIndex++;
         playbackState = IDLE;
       }
       break;
-      
+
     case WORD_GAP:
-      if (now - playbackTimer >= (ditLength * 7)) { // Opraveno: mezera mezi slovy je 7*ditLength
+      if (now - playbackTimer >= (ditLength * 7)) {  // Opraveno: mezera mezi slovy je 7*ditLength
         playbackIndex++;
         playbackState = IDLE;
       }
       break;
-      
+
     case LONG_GAP:
       // Dlouhá mezera po každém 5. znaku (7 * ditLength)
-      if (now - playbackTimer >= (ditLength * 7)) { // Opraveno: bylo 10, teď 7
+      if (now - playbackTimer >= (ditLength * 7)) {  // Opraveno: bylo 10, teď 7
         playbackIndex++;
         playbackState = IDLE;
       }
       break;
   }
 }
+
+void playCustomSequence() {
+  // Můžete zde zadat libovolnou zprávu
+  receivedText = "DE OK1MFG 73";
+  int originalWPM = wpm;
+  wpm = 30;  // rychlost chcete
+  updateDitLength();
+  startPlayback(); 
+}
+
 
 // -------------------------
 // Setup
@@ -410,6 +416,7 @@ void setup() {
   encoder.write(0);
   updateDitLength();
 
+
   // info "boot" screen
   lcd.clear();
 
@@ -425,7 +432,18 @@ void setup() {
   lcd.setCursor(4, 3);  // 5 sloupec, 4 řádek
   lcd.print("2025-OK1MFG");
 
-  delay(3000);  // 3s
+  // Spusť přehrávání sekvence
+  playCustomSequence();
+
+  // Čekej až se přehrávání dokončí
+  while (isPlaying) {
+    handlePlayback();  // Zpracovává přehrávání
+    delay(1);          // Malá pauza pro stability
+  }
+
+  // vrátí původní WPM
+  wpm = lastSavedWPM;
+  updateDitLength();
 
   lcd.clear();
 }
@@ -507,26 +525,25 @@ void loop() {
   // Kontrola tlačítka PLAY/STOP
   static bool lastPlayButtonState = HIGH;
   bool currentPlayButtonState = digitalRead(PLAY_BUTTON_PIN);
-  
+
   // Detekce sestupné hrany (stisknutí tlačítka)
   if (lastPlayButtonState == HIGH && currentPlayButtonState == LOW) {
     delay(50);  // debounce
-    
+
     // Ověř stav tlačítka po debounce
     if (digitalRead(PLAY_BUTTON_PIN) == LOW) {
       if (isPlaying) {
         // Pokud přehrává, zastav
         stopPlaybackNow();
-                
+
       } else {
         // Pokud nepřehrává, spusť přehrávání
         if (receivedText.length() > 0) {
           startPlayback();
-          
         }
       }
     }
   }
-  
+
   lastPlayButtonState = currentPlayButtonState;
 }
