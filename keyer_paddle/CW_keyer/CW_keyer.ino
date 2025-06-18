@@ -1,3 +1,27 @@
+/*
+Tempo „PARIS“
+Při vysílání Morseovy abecedy v akustické podobě se používají následující pravidla:
+
+- základní časovou jednotkou je délka tečky
+- čárka má stejnou dobu trvání jako tři tečky
+- zvuková pauza uvnitř značky má stejnou dobu trvání jako jedna tečka
+- zvuková pauza mezi značkami má stejnou dobu trvání jako jedna čárka
+- zvuková pauza mezi slovy má stejnou dobu trvání jako sedm teček
+
+Tyto poměry umožňují sluchem zcela spolehlivě rozlišit tečku od čárky i druh akustické pauzy.
+Za další, poměr celkové doby trvání vysílání tečky nebo čárky včetně pauzy uvnitř značky je 2:1,
+což usnadňuje udržet konstantní rychlost vysílání.
+
+Pro určení rychlosti vysílání se bere jako reference pětipísmenné slovo „PARIS“ 
+(celkem 10 teček, 4 čárky, 4 mezery). 
+Celková doba jeho odvysílání včetně mezery za slovem je tedy 50 základních jednotek (délek teček).
+Pokud tedy například hovoříme o tempu vysílání 12 slov za minutu (WPM, words per minute),
+odpovídá to právě rychlosti průměrně jednoho písmene (znaku) za sekundu (12*5 = 60 znaků za minutu),
+délka tečky je 60/(12*50) = 0,1 sekundy.
+
+*/
+
+
 #include <LiquidCrystal_I2C.h>
 #include <Encoder.h>
 #include <EEPROM.h>
@@ -32,6 +56,36 @@ Encoder encoder(ENC_CLK, ENC_DT);
 // EEPROM
 const int EEPROM_WPM_ADDR = 0;
 const int EEPROM_DIR_ADDR = 1;
+
+// -------------------------
+// Morseova tabulka
+// -------------------------
+
+// Struktura pro jednu položku morseovky
+struct MorseCode {
+    char character;
+    const char* morse;
+};
+
+// Pole s definicemi morseovky - JEDINÉ MÍSTO PRO VŠECHNY ZNAKY
+const MorseCode morseTable[] = {
+    {'A', ".-"}, {'B', "-..."}, {'C', "-.-."}, {'D', "-.."}, {'E', "."},
+    {'F', "..-."}, {'G', "--."}, {'H', "...."}, {'I', ".."}, {'J', ".---"},
+    {'K', "-.-"}, {'L', ".-.."}, {'M', "--"}, {'N', "-."}, {'O', "---"},
+    {'P', ".--."}, {'Q', "--.-"}, {'R', ".-."}, {'S', "..."}, {'T', "-"},
+    {'U', "..-"}, {'V', "...-"}, {'W', ".--"}, {'X', "-..-"}, {'Y', "-.--"},
+    {'Z', "--.."}, {'0', "-----"}, {'1', ".----"}, {'2', "..---"}, 
+    {'3', "...--"}, {'4', "....-"}, {'5', "....."}, {'6', "-...."}, 
+    {'7', "--..."}, {'8', "---.."}, {'9', "----."}, {'?', "..--.."}, 
+    {'/', "-..-."}, {'=', "-...-"}, {',', "--..--"}, {'.', ".-.-.-"},
+    {'*', "*"}, {' ', " "}, {'@',".--.-."}
+};
+
+const int morseTableSize = sizeof(morseTable) / sizeof(morseTable[0]);
+
+// -------------------------
+// Globální proměnné
+// -------------------------
 
 int wpm = 40;
 int lastSavedWPM = 40;
@@ -86,6 +140,30 @@ void updateDitLength() {
 }
 
 // ------------------------------------------------------------
+// Nové zjednodušené funkce pro morseovku
+// ------------------------------------------------------------
+
+String charToMorse(char c) {
+    c = toupper(c);
+    
+    for (int i = 0; i < morseTableSize; i++) {
+        if (morseTable[i].character == c) {
+            return morseTable[i].morse;
+        }
+    }
+    return "";  // neznámý znak
+}
+
+char decodeMorse(String morse) {
+    for (int i = 0; i < morseTableSize; i++) {
+        if (morse == morseTable[i].morse) {
+            return morseTable[i].character;
+        }
+    }
+    return '*';  // neznámý znak
+}
+
+// ------------------------------------------------------------
 
 void updateEncoder() {
   long encVal = encoder.read() / 4;
@@ -107,104 +185,6 @@ void updateEncoder() {
   lcd.setCursor(12, 0);  // pevná pozice MODE
   lcd.print("MODE: ");
   lcd.print(paddleReversed ? "-." : ".-");
-}
-
-// ------------------------------------------------------------
-
-char decodeMorse(String morse) {
-  if (morse == ".-") return 'A';
-  if (morse == "-...") return 'B';
-  if (morse == "-.-.") return 'C';
-  if (morse == "-..") return 'D';
-  if (morse == ".") return 'E';
-  if (morse == "..-.") return 'F';
-  if (morse == "--.") return 'G';
-  if (morse == "....") return 'H';
-  if (morse == "..") return 'I';
-  if (morse == ".---") return 'J';
-  if (morse == "-.-") return 'K';
-  if (morse == ".-..") return 'L';
-  if (morse == "--") return 'M';
-  if (morse == "-.") return 'N';
-  if (morse == "---") return 'O';
-  if (morse == ".--.") return 'P';
-  if (morse == "--.-") return 'Q';
-  if (morse == ".-.") return 'R';
-  if (morse == "...") return 'S';
-  if (morse == "-") return 'T';
-  if (morse == "..-") return 'U';
-  if (morse == "...-") return 'V';
-  if (morse == ".--") return 'W';
-  if (morse == "-..-") return 'X';
-  if (morse == "-.--") return 'Y';
-  if (morse == "--..") return 'Z';
-  if (morse == "-----") return '0';
-  if (morse == ".----") return '1';
-  if (morse == "..---") return '2';
-  if (morse == "...--") return '3';
-  if (morse == "....-") return '4';
-  if (morse == ".....") return '5';
-  if (morse == "-....") return '6';
-  if (morse == "--...") return '7';
-  if (morse == "---..") return '8';
-  if (morse == "----.") return '9';
-  if (morse == "..--..") return '?';
-  if (morse == "--..-.") return '/';
-  if (morse == "-...-") return '=';
-  if (morse == "--..--") return ',';
-  if (morse == ".-.-.") return '.';
-  return '*';  // neznámý znak
-}
-
-// ------------------------------------------------------------
-
-String charToMorse(char c) {
-  c = toupper(c);
-  
-  if (c == 'A') return ".-";
-  else if (c == 'B') return "-...";
-  else if (c == 'C') return "-.-.";
-  else if (c == 'D') return "-..";
-  else if (c == 'E') return ".";
-  else if (c == 'F') return "..-.";
-  else if (c == 'G') return "--.";
-  else if (c == 'H') return "....";
-  else if (c == 'I') return "..";
-  else if (c == 'J') return ".---";
-  else if (c == 'K') return "-.-";
-  else if (c == 'L') return ".-..";
-  else if (c == 'M') return "--";
-  else if (c == 'N') return "-.";
-  else if (c == 'O') return "---";
-  else if (c == 'P') return ".--.";
-  else if (c == 'Q') return "--.-";
-  else if (c == 'R') return ".-.";
-  else if (c == 'S') return "...";
-  else if (c == 'T') return "-";
-  else if (c == 'U') return "..-";
-  else if (c == 'V') return "...-";
-  else if (c == 'W') return ".--";
-  else if (c == 'X') return "-..-";
-  else if (c == 'Y') return "-.--";
-  else if (c == 'Z') return "--..";
-  else if (c == '0') return "-----";
-  else if (c == '1') return ".----";
-  else if (c == '2') return "..---";
-  else if (c == '3') return "...--";
-  else if (c == '4') return "....-";
-  else if (c == '5') return ".....";
-  else if (c == '6') return "-....";
-  else if (c == '7') return "--...";
-  else if (c == '8') return "---..";
-  else if (c == '9') return "----.";
-  else if (c == '?') return "..--..";
-  else if (c == '/') return "--..-.";
-  else if (c == '=') return "-...-";
-  else if (c == ',') return "--..--";
-  else if (c == '.') return ".-.-.";
-  else if (c == '*') return "*";  // speciální znak pro dlouhý tón
-  else if (c == ' ') return " ";  // mezera
-  else return "";  // neznámý znak
 }
 
 // ------------------------------------------------------------
@@ -337,8 +317,8 @@ void handlePlayback() {
         playbackState = WORD_GAP;
         playbackTimer = now;
       } else if (currentPlaybackMorse == "*") {
-        // Speciální dlouhý tón (7 ditLength)
-        buzzerOn();
+        // Speciální dlouhá pomlka (10 ditLength)
+        buzzerOff();
         playbackTimer = now;
         playbackState = PLAYING_ELEMENT;
         currentPlaybackMorseIndex = 0;  // Označíme jako první (a jediný) element
@@ -360,7 +340,7 @@ void handlePlayback() {
         unsigned long elementDuration;
         
         if (currentPlaybackMorse == "*") {
-          // Speciální dlouhý tón pro znak *
+          // Speciální dlouhá pomlka (10 ditLength) pro znak *
           elementDuration = ditLength * 10;
         } else {
           // Normální elementy
