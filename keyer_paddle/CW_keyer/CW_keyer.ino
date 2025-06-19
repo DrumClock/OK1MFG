@@ -1,3 +1,26 @@
+/*
+Tempo „PARIS“
+Při vysílání Morseovy abecedy v akustické podobě se používají následující pravidla:
+
+základní časovou jednotkou je délka tečky
+čárka má stejnou dobu trvání jako tři tečky
+zvuková pauza uvnitř značky má stejnou dobu trvání jako jedna tečka
+zvuková pauza mezi značkami má stejnou dobu trvání jako jedna čárka
+zvuková pauza mezi slovy má stejnou dobu trvání jako sedm teček
+
+Tyto poměry umožňují sluchem zcela spolehlivě rozlišit tečku od čárky i druh akustické pauzy.
+Za další, poměr celkové doby trvání vysílání tečky nebo čárky včetně pauzy uvnitř značky je 2:1,
+což usnadňuje udržet konstantní rychlost vysílání. 
+  
+Pro určení rychlosti vysílání se bere jako reference pětipísmenné slovo „PARIS“ (celkem 10 teček, 4 čárky, 4 mezery).
+Celková doba jeho odvysílání včetně mezery za slovem je tedy 50 základních jednotek (délek teček). 
+Pokud tedy například hovoříme o tempu vysílání 12 slov za minutu (WPM, words per minute), 
+odpovídá to právě rychlosti průměrně jednoho písmene (znaku) za sekundu (12*5 = 60 znaků za minutu), 
+délka tečky je 60/(12*50) = 0,1 sekundy.
+
+*/
+
+
 #include <LiquidCrystal_I2C.h>
 #include <Encoder.h>
 #include <EEPROM.h>
