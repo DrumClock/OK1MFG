@@ -1,5 +1,5 @@
 /*
-Tempo „PARIS“
+Tempo „PARIS"
 Při vysílání Morseovy abecedy v akustické podobě se používají následující pravidla:
 
 základní časovou jednotkou je délka tečky
@@ -12,7 +12,7 @@ Tyto poměry umožňují sluchem zcela spolehlivě rozlišit tečku od čárky i
 Za další, poměr celkové doby trvání vysílání tečky nebo čárky včetně pauzy uvnitř značky je 2:1,
 což usnadňuje udržet konstantní rychlost vysílání. 
   
-Pro určení rychlosti vysílání se bere jako reference pětipísmenné slovo „PARIS“ (celkem 10 teček, 4 čárky, 4 mezery).
+Pro určení rychlosti vysílání se bere jako reference pětipísmenné slovo „PARIS" (celkem 10 teček, 4 čárky, 4 mezery).
 Celková doba jeho odvysílání včetně mezery za slovem je tedy 50 základních jednotek (délek teček). 
 Pokud tedy například hovoříme o tempu vysílání 12 slov za minutu (WPM, words per minute), 
 odpovídá to právě rychlosti průměrně jednoho písmene (znaku) za sekundu (12*5 = 60 znaků za minutu), 
@@ -20,9 +20,7 @@ délka tečky je 60/(12*50) = 0,1 sekundy.
 
 */
 
-
 #include <LiquidCrystal_I2C.h>
-#include <Encoder.h>
 #include <EEPROM.h>
 
 // -------------------------
@@ -31,12 +29,12 @@ délka tečky je 60/(12*50) = 0,1 sekundy.
 
 #define BUZZER_ACTIVE_LOW true  // nastav na false, pokud je buzzer aktivní na HIGH
 
-#define DIT_PIN 2  // pin podporuje "interrupt"
-#define DAH_PIN 3  // pin podporuje "interrupt"
+#define DIT_PIN 2   // pin podporuje "interrupt"
+#define DAH_PIN 3   // pin podporuje "interrupt"
 
-#define ENC_CLK 4
-#define ENC_DT 5
-#define ENC_SW 6
+#define ENC_CLK 4   // pin podporuje PCINT2 (pin change interrupt 2)
+#define ENC_DT 5    // pin podporuje PCINT2 (pin change interrupt 2)
+#define ENC_SW 10   // pin 6 je vadný !
 
 #define CLEAR_BUTTON_PIN 7
 #define PLAY_BUTTON_PIN 8
@@ -47,10 +45,6 @@ délka tečky je 60/(12*50) = 0,1 sekundy.
 LiquidCrystal_I2C lcd(0x27, 20, 4);
 // SDA (data): pin A4
 // SCL (clock): pin A5
-
-// -------------------------
-
-Encoder encoder(ENC_CLK, ENC_DT);
 
 // EEPROM
 const int EEPROM_WPM_ADDR = 0;
@@ -87,8 +81,8 @@ const int morseTableSize = sizeof(morseTable) / sizeof(morseTable[0]);
 // Globální proměnné
 // -------------------------
 
-int wpm = 40;
-int lastSavedWPM = 40;
+int wpm = 20;
+int lastSavedWPM = 20;
 const int minWPM = 5;
 const int maxWPM = 60;
 unsigned long ditLength = 60;
@@ -97,13 +91,22 @@ bool paddleReversed = false;
 String currentMorse = "";
 unsigned long lastKeyTime = 0;
 unsigned long charGap = 250;
+bool elementPause = false;
+unsigned long elementPauseStart = 0;
 
-long lastEncValue = 0;
+
+volatile bool pinClkState;
+volatile bool pinDtState;
 bool buttonPressed = false;
 unsigned long buttonDownTime = 0;
 bool tonePlaying = false;
 unsigned long toneDuration = 0;
 unsigned long lastToneTime = 0;
+
+unsigned long lastDisplayUpdate = 0;
+int lastDisplayedWPM = 0;
+bool lastDisplayedPaddleState = false;
+
 
 // Pro rolování znaků
 String receivedText = "";
@@ -168,17 +171,7 @@ char decodeMorse(String morse) {
 
 // ------------------------------------------------------------
 
-void updateEncoder() {
-  long encVal = encoder.read() / 4;
-  if (encVal != lastEncValue) {
-    int newWPM = constrain(wpm - (encVal - lastEncValue), minWPM, maxWPM);
-    if (newWPM != wpm) {
-      wpm = newWPM;
-      updateDitLength();
-    }
-    lastEncValue = encVal;
-  }
-
+void updateEncoderDisplay() {
   // 1. řádek: WPM a MODE pevně zarovnané
   lcd.setCursor(0, 0);  // sloupec 0, řádek 0
   lcd.print("WPM: ");
@@ -331,7 +324,6 @@ void handlePlayback() {
         // Zůstat v IDLE pro další znak
       } else {
         // Začni přehrávat první element znaku
-        char element = currentPlaybackMorse[currentPlaybackMorseIndex];
         buzzerOn();
         playbackTimer = now;
         playbackState = PLAYING_ELEMENT;
@@ -377,7 +369,6 @@ void handlePlayback() {
     case ELEMENT_GAP:
       if (now - playbackTimer >= ditLength) {
         // Začni hrát další element
-        char element = currentPlaybackMorse[currentPlaybackMorseIndex];
         buzzerOn();
         playbackTimer = now;
         playbackState = PLAYING_ELEMENT;
@@ -409,24 +400,52 @@ void handlePlayback() {
 }
 
 void playCustomSequence() {
-  // Můžete zde zadat libovolnou zprávu
-  receivedText = "DE OK1MFG 73";
   int originalWPM = wpm;
-  wpm = 30;  // rychlost chcete
+
+  // Můžete zde zadat libovolnou zprávu
+  receivedText = "QRV";
+  wpm = 30;  // rychlost 
   updateDitLength();
   startPlayback();
 }
 
+//-----------------------------------------------------------------------
+
+ISR(PCINT2_vect) {
+  bool newPinClkState = PIND & (1 << PIND4);
+  bool newPinDtState = PIND & (1 << PIND5);
+
+  if (newPinClkState != pinClkState) {
+    if (newPinClkState) { // náběžná hrana
+      if (newPinDtState != newPinClkState) {
+        if (wpm < maxWPM) wpm++;
+      } else {
+        if (wpm > minWPM) wpm--;
+      }   
+      updateDitLength();
+    }
+  }
+
+  pinClkState = newPinClkState;
+  pinDtState = newPinDtState;
+}
 
 // -------------------------
 // Setup
 // -------------------------
 
 void setup() {
+
+  // Serial.begin(9600); // do setup()
+
   pinMode(DIT_PIN, INPUT_PULLUP);
   pinMode(DAH_PIN, INPUT_PULLUP);
   pinMode(BUZZER_PIN, OUTPUT);
-  pinMode(ENC_SW, INPUT_PULLUP);
+  
+  pinMode(ENC_SW, INPUT_PULLUP);  
+  pinMode(ENC_CLK, INPUT_PULLUP);
+  pinMode(ENC_DT, INPUT_PULLUP);
+  
   pinMode(CLEAR_BUTTON_PIN, INPUT_PULLUP);
   pinMode(PLAY_BUTTON_PIN, INPUT_PULLUP);
 
@@ -435,7 +454,16 @@ void setup() {
   lcd.init();
   lcd.backlight();
 
-  updateEncoder();  // Zobraz první řádek
+  // Nastavení interruptů pro encoder
+  pinClkState = digitalRead(ENC_CLK);
+  pinDtState = digitalRead(ENC_DT);
+  // Povolit PCI pro PCINT2 (piny 0-7 portu D)
+  PCICR |= (1 << PCIE2);
+  // Povolit PCI jen pro piny ENC_CLK a ENC_DT (PCINT20 a PCINT21)
+  PCMSK2 |= (1 << PCINT20) | (1 << PCINT21);
+  sei(); // Globální povolení přerušení 
+
+  updateEncoderDisplay();  // Zobraz první řádek
 
   int storedWPM = EEPROM.read(EEPROM_WPM_ADDR);
   if (storedWPM >= minWPM && storedWPM <= maxWPM) {
@@ -446,9 +474,7 @@ void setup() {
   paddleReversed = (storedDir == 1);
 
   lastSavedWPM = wpm;
-  encoder.write(0);
   updateDitLength();
-
 
   // info "boot" screen
   lcd.clear();
@@ -472,7 +498,7 @@ void setup() {
   while (isPlaying) {
     handlePlayback();   // Zpracovává přehrávání
     delay(1);           // Malá pauza pro stability
-    receivedText = "";  // smaže text
+    receivedText = "";  // smaže zprávu
   }
 
   // vrátí původní WPM
@@ -490,7 +516,17 @@ void setup() {
 void loop() {
   unsigned long now = millis();
 
-  updateEncoder();
+ 
+  // Update display pouze když je potřeba (úspora času)
+  if (wpm != lastDisplayedWPM || 
+      paddleReversed != lastDisplayedPaddleState || 
+      now - lastDisplayUpdate > 100) {  // max každých 100ms
+    updateEncoderDisplay();
+    lastDisplayUpdate = now;
+    lastDisplayedWPM = wpm;
+    lastDisplayedPaddleState = paddleReversed;
+  }
+
   handleEncoderButton();  
   handlePlayback();       // Zpracování přehrávání (non-blocking)
 
@@ -499,43 +535,50 @@ void loop() {
 
   // Paddle input pouze pokud se nepřehrává
   if (!isPlaying) {
-    if (!tonePlaying) {
-      if (ditPressedRaw) {
-        buzzerOn();
-        toneDuration = ditLength;
-        tonePlaying = true;
-        lastToneTime = now;
-        currentMorse += ".";
-        lastKeyTime = now;
-      } else if (dahPressedRaw) {
-        buzzerOn();
-        toneDuration = ditLength * 3;
-        tonePlaying = true;
-        lastToneTime = now;
-        currentMorse += "-";
-        lastKeyTime = now;
-      }
-    } else if (now - lastToneTime >= toneDuration) {
-      buzzerOff();
-      tonePlaying = false;
+  if (!tonePlaying && !elementPause) {
+    // Můžeme začít nový element
+    if (ditPressedRaw) {
+      buzzerOn();
+      toneDuration = ditLength;
+      tonePlaying = true;
       lastToneTime = now;
+      currentMorse += ".";
+      lastKeyTime = now;
+    } else if (dahPressedRaw) {
+      buzzerOn();
+      toneDuration = ditLength * 3;
+      tonePlaying = true;
+      lastToneTime = now;
+      currentMorse += "-";
+      lastKeyTime = now;
     }
-
-    if (!ditPressedRaw && !dahPressedRaw && currentMorse.length() > 0 && (now - lastKeyTime > charGap)) {
-      char decoded = decodeMorse(currentMorse);
-      receivedText += decoded;
-      if (receivedText.length() > 60) {
-        receivedText = receivedText.substring(receivedText.length() - 60);  // max 3 řádky po 20 znacích
-      }
-      updateLCDText();
-      currentMorse = "";
-    }
+  } else if (tonePlaying && (now - lastToneTime >= toneDuration)) {
+    // Konec tónu - začni pauzu mezi elementy
+    buzzerOff();
+    tonePlaying = false;
+    elementPause = true;
+    elementPauseStart = now;
+  } else if (elementPause && (now - elementPauseStart >= ditLength)) {
+    // Konec pauzy mezi elementy
+    elementPause = false;
+    lastKeyTime = now; // Aktualizuj čas pro detekci konce znaku
   }
 
-  unsigned long loopStart = millis();
-  while (millis() - loopStart < 1)
-    ;  // rychlý "non-blocking" delay
-
+  // Detekce konce znaku (žádné tlačítko stisknuto a uplynula doba charGap)
+  if (!ditPressedRaw && !dahPressedRaw && !tonePlaying && !elementPause && 
+      currentMorse.length() > 0 && (now - lastKeyTime > charGap)) {
+    char decoded = decodeMorse(currentMorse);
+    receivedText += decoded;
+    if (receivedText.length() > 60) {
+      receivedText = receivedText.substring(receivedText.length() - 60);
+    }
+    updateLCDText();
+    currentMorse = "";
+  }
+}
+  
+  // rychlý "non-blocking" delay
+  delayMicroseconds(100);  // 0.1 ms 
 
 
   // Kontrola tlačít DELETE
@@ -555,7 +598,6 @@ void loop() {
       }
     }
   }
-
 
   // Kontrola tlačítka PLAY/STOP
   static bool lastPlayButtonState = HIGH;
