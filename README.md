@@ -6,3 +6,11 @@
 # CW Paddle-Key
 
 [![Panel](https://github.com/DrumClock/OK1MFG/blob/main/Keyer_paddle/IMG_2.jpg)](https://github.com/DrumClock/OK1MFG/tree/main/Keyer_paddle)
+
+
+<!-- 
+# CW Paddle-Key
+
+[![Panel](https://github.com/DrumClock/OK1MFG/tree/main/Keypad_tucnak/IMG_1.jpg)](https://github.com/DrumClock/OK1MFG/tree/main/Keyer_paddle)
+
+-->
