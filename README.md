@@ -9,7 +9,7 @@
 
 
  
-# Keypad - HVF log Tučňák
+# Keypad - VHF log Tučňák
 
 [![Panel](https://github.com/DrumClock/OK1MFG/blob/main/Keypad_tucnak/IMG_keypad.jpg)](https://github.com/DrumClock/OK1MFG/tree/main/Keypad_tucnak)
 
