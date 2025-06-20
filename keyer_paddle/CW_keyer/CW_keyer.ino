@@ -71,7 +71,7 @@ const MorseCode morseTable[] = {
   { 'Y', "-.--" }, { 'Z', "--.." }, { '0', "-----" }, { '1', ".----" }, 
   { '2', "..---" }, { '3', "...--" }, { '4', "....-" }, { '5', "....." }, 
   { '6', "-...." }, { '7', "--..." }, { '8', "---.." }, { '9', "----." },
-  { '?', "..--.." }, { '/', "--..-." }, { '=', "-...-" }, { ',', "--..--" }, 
+  { '?', "..--.." }, { '/', "-..-." }, { '=', "-...-" }, { ',', "--..--" }, 
   { '.', ".-.-.-" }, { '*', "*" }, { ' ', " " }
 };
 
@@ -110,6 +110,7 @@ bool lastDisplayedPaddleState = false;
 
 // Pro rolování znaků
 String receivedText = "";
+String trainigText = "ABCDEFGHIJKLMNOPQRSTUVWXYZ 1234567890 ?/=,.";
 
 // Globální proměnné pro kontrolu přehrávání
 volatile bool stopPlayback = false;
@@ -498,14 +499,19 @@ void setup() {
   while (isPlaying) {
     handlePlayback();   // Zpracovává přehrávání
     delay(1);           // Malá pauza pro stability
-    receivedText = "";  // smaže zprávu
+   receivedText = "";  // smaže zprávu   
+   
   }
 
   // vrátí původní WPM
   wpm = lastSavedWPM;
   updateDitLength();
-
   lcd.clear();
+
+
+  // nastaví úvodní text
+  receivedText =  trainigText ; 
+  updateLCDText();
 }
 
 
@@ -581,10 +587,35 @@ void loop() {
   delayMicroseconds(100);  // 0.1 ms 
 
 
-  // Kontrola tlačít DELETE
+// Kontrola tlačítka CLEAR / RESET
+if (digitalRead(CLEAR_BUTTON_PIN) == LOW) {
+  delay(50);  // debounce
   if (digitalRead(CLEAR_BUTTON_PIN) == LOW) {
-    delay(50);  // debounce
-    if (digitalRead(CLEAR_BUTTON_PIN) == LOW) {
+    unsigned long pressStartTime = millis();
+    bool longPressDetected = false;
+    
+    // Čekáme, dokud je tlačítko stisknuto a měříme čas
+    while (digitalRead(CLEAR_BUTTON_PIN) == LOW) {
+      delay(10);
+      
+      // Pokud je tlačítko stisknuto déle než 3 sekundy, reset MCU
+      if (millis() - pressStartTime > 3000 && !longPressDetected) {
+        longPressDetected = true;
+        
+        // Zobrazit zprávu o restartu
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("RESTART...");
+        delay(1000);
+        
+        // Reset MCU
+        asm volatile ("jmp 0");  // Pro Arduino Uno/Nano
+        // Alternativně: NVIC_SystemReset(); // Pro ARM procesory (ESP32, STM32)
+      }
+    }
+    
+    // Pokud nebylo dlouhé stisknutí, provedeme normální vymazání
+    if (!longPressDetected) {
       // Vymazání bufferu a LCD řádků 2-4
       currentMorse = "";
       receivedText = "";
@@ -592,12 +623,10 @@ void loop() {
         lcd.setCursor(0, row);
         lcd.print("                    ");  // 20 mezer na vymazání celého řádku
       }
-      // Počkej, dokud tlačítko nebude uvolněné, aby se nevymazalo vícekrát
-      while (digitalRead(CLEAR_BUTTON_PIN) == LOW) {
-        delay(10);
-      }
     }
   }
+}
+  
 
   // Kontrola tlačítka PLAY/STOP
   static bool lastPlayButtonState = HIGH;
