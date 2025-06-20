@@ -1,4 +1,3 @@
 # Ovládání rotátoru "SEVER"
 
-![Rotator_frame](https://github.com/DrumClock/OK1MFG/blob/main/Sever_rotator/IMG_panel.jpg)
-
+[![Panel](https://github.com/DrumClock/OK1MFG/raw/main/Sever_rotator/IMG_panel.jpg)](https://github.com/DrumClock/OK1MFG/tree/main/Sever_rotator)
