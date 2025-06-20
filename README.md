@@ -8,9 +8,9 @@
 [![Panel](https://github.com/DrumClock/OK1MFG/blob/main/Keyer_paddle/IMG_2.jpg)](https://github.com/DrumClock/OK1MFG/tree/main/Keyer_paddle)
 
 
-<!-- 
-# CW Paddle-Key
+ 
+# Keypad - HVF log Tučňák
 
-[![Panel](https://github.com/DrumClock/OK1MFG/tree/main/Keypad_tucnak/IMG_1.jpg)](https://github.com/DrumClock/OK1MFG/tree/main/Keyer_paddle)
+[![Panel](https://github.com/DrumClock/OK1MFG/blob/main/Keypad_tucnak/IMG_keypad.jpg)](https://github.com/DrumClock/OK1MFG/tree/main/Keyer_paddle)
 
--->
+
