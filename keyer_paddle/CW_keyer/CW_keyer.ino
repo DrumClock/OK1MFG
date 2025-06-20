@@ -34,12 +34,14 @@ délka tečky je 60/(12*50) = 0,1 sekundy.
 
 #define ENC_CLK 4   // pin podporuje PCINT2 (pin change interrupt 2)
 #define ENC_DT 5    // pin podporuje PCINT2 (pin change interrupt 2)
-#define ENC_SW 10   // pin 6 je vadný !
+//#define ENC_SW 6   // pin nefunguje, nahrazen pinem 10 !
 
 #define CLEAR_BUTTON_PIN 7
 #define PLAY_BUTTON_PIN 8
 
 #define BUZZER_PIN 9
+
+#define ENC_SW 10   // náhrada za pin 6 !
 
 // LCD I2C adresa a velikost
 LiquidCrystal_I2C lcd(0x27, 20, 4);
@@ -94,11 +96,11 @@ unsigned long charGap = 250;
 bool elementPause = false;
 unsigned long elementPauseStart = 0;
 
-
 volatile bool pinClkState;
 volatile bool pinDtState;
 bool buttonPressed = false;
 unsigned long buttonDownTime = 0;
+
 bool tonePlaying = false;
 unsigned long toneDuration = 0;
 unsigned long lastToneTime = 0;
@@ -108,15 +110,14 @@ int lastDisplayedWPM = 0;
 bool lastDisplayedPaddleState = false;
 
 
-// Pro rolování znaků
 String receivedText = "";
 String trainigText = "ABCDEFGHIJKLMNOPQRSTUVWXYZ 1234567890 ?/=,.";
 
-// Globální proměnné pro kontrolu přehrávání
+// proměnné pro kontrolu přehrávání
 volatile bool stopPlayback = false;
 bool isPlaying = false;
 
-// Nové proměnné pro non-blocking přehrávání
+// proměnné pro non-blocking přehrávání
 String playbackText = "";
 int playbackIndex = 0;
 String currentPlaybackMorse = "";
@@ -130,6 +131,7 @@ enum PlaybackState { IDLE,
                      WORD_GAP,
                      LONG_GAP };
 PlaybackState playbackState = IDLE;
+
 
 // -------------------------
 // Funkce
@@ -206,13 +208,17 @@ void handleEncoderButton() {
     if (!buttonPressed) {
       buttonPressed = true;
       buttonDownTime = millis();
-    } else if (millis() - buttonDownTime > 1500) {
+
+    // změna MODE a uložení do EEPROM  
+    } else if (millis() - buttonDownTime > 1500) {   
       togglePaddleDirection();
       while (digitalRead(ENC_SW) == LOW)
         ;
       buttonPressed = false;
     }
-  } else if (buttonPressed) {
+
+   // změna WPM a uložení do EEPROM  
+  } else if (buttonPressed) {        // změna WPM
     EEPROM.write(EEPROM_WPM_ADDR, wpm);
     lastSavedWPM = wpm;
     buttonPressed = false;
