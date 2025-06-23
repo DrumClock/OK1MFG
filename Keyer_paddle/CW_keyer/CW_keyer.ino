@@ -1,3 +1,4 @@
+
 /*
 Tempo „PARIS"
 Při vysílání Morseovy abecedy v akustické podobě se používají následující pravidla:
@@ -29,11 +30,11 @@ délka tečky je 60/(12*50) = 0,1 sekundy.
 
 #define BUZZER_ACTIVE_LOW true  // nastav na false, pokud je buzzer aktivní na HIGH
 
-#define DIT_PIN 2   // pin podporuje "interrupt"
-#define DAH_PIN 3   // pin podporuje "interrupt"
+#define DIT_PIN 2  // pin podporuje "interrupt"
+#define DAH_PIN 3  // pin podporuje "interrupt"
 
-#define ENC_CLK 4   // pin podporuje PCINT2 (pin change interrupt 2)
-#define ENC_DT 5    // pin podporuje PCINT2 (pin change interrupt 2)
+#define ENC_CLK 4  // pin podporuje PCINT2 (pin change interrupt 2)
+#define ENC_DT 5   // pin podporuje PCINT2 (pin change interrupt 2)
 //#define ENC_SW 6   // pin nefunguje, nahrazen pinem 10 !
 
 #define CLEAR_BUTTON_PIN 7
@@ -41,7 +42,7 @@ délka tečky je 60/(12*50) = 0,1 sekundy.
 
 #define BUZZER_PIN 9
 
-#define ENC_SW 10   // náhrada za pin 6 !
+#define ENC_SW 10  // náhrada za pin 6 !
 
 // LCD I2C adresa a velikost
 LiquidCrystal_I2C lcd(0x27, 20, 4);
@@ -62,17 +63,17 @@ struct MorseCode {
   const char* morse;
 };
 
-// Pole s definicemi morseovky - JEDINÉ MÍSTO PRO VŠECHNY ZNAKY
+// Pole s definicemi morseovky  
 const MorseCode morseTable[] = {
-  { 'A', ".-" }, { 'B', "-..." }, { 'C', "-.-." }, { 'D', "-.." }, 
-  { 'E', "." }, { 'F', "..-." }, { 'G', "--." }, { 'H', "...." },
+  { 'A', ".-" }, { 'B', "-..." }, { 'C', "-.-." }, { 'D', "-.." },
+  { 'E', "." }, { 'F', "..-." }, { 'G', "--." }, { 'H', "...." }, 
   { 'I', ".." }, { 'J', ".---" }, { 'K', "-.-" }, { 'L', ".-.." }, 
   { 'M', "--" }, { 'N', "-." }, { 'O', "---" }, { 'P', ".--." }, 
   { 'Q', "--.-" }, { 'R', ".-." }, { 'S', "..." }, { 'T', "-" }, 
   { 'U', "..-" }, { 'V', "...-" }, { 'W', ".--" }, { 'X', "-..-" }, 
   { 'Y', "-.--" }, { 'Z', "--.." }, { '0', "-----" }, { '1', ".----" }, 
   { '2', "..---" }, { '3', "...--" }, { '4', "....-" }, { '5', "....." }, 
-  { '6', "-...." }, { '7', "--..." }, { '8', "---.." }, { '9', "----." },
+  { '6', "-...." }, { '7', "--..." }, { '8', "---.." }, { '9', "----." }, 
   { '?', "..--.." }, { '/', "-..-." }, { '=', "-...-" }, { ',', "--..--" }, 
   { '.', ".-.-.-" }, { '*', "*" }, { ' ', " " }
 };
@@ -92,14 +93,16 @@ unsigned long ditLength = 60;
 bool paddleReversed = false;
 String currentMorse = "";
 unsigned long lastKeyTime = 0;
-unsigned long charGap = 250;
 bool elementPause = false;
 unsigned long elementPauseStart = 0;
+bool endDecode = true;
+
 
 volatile bool pinClkState;
 volatile bool pinDtState;
 bool buttonPressed = false;
 unsigned long buttonDownTime = 0;
+
 
 bool tonePlaying = false;
 unsigned long toneDuration = 0;
@@ -108,7 +111,6 @@ unsigned long lastToneTime = 0;
 unsigned long lastDisplayUpdate = 0;
 int lastDisplayedWPM = 0;
 bool lastDisplayedPaddleState = false;
-
 
 String receivedText = "";
 String trainigText = "ABCDEFGHIJKLMNOPQRSTUVWXYZ 1234567890 ?/=,.";
@@ -132,10 +134,30 @@ enum PlaybackState { IDLE,
                      LONG_GAP };
 PlaybackState playbackState = IDLE;
 
+// --- Časovače pro kontrolu tlačítek ---
+unsigned long lastButtonCheckTime = 0;
+
+// ISR flagy
+volatile bool ditHeld = false;
+volatile bool dahHeld = false;
+
 
 // -------------------------
 // Funkce
 // -------------------------
+
+// ISR pro paddle 
+
+void onDitPressed() {
+  ditHeld = true;
+}
+
+void onDahPressed() {
+  dahHeld = true;
+}
+
+
+// ----------------------------------------------------------
 
 void buzzerOn() {
   digitalWrite(BUZZER_PIN, BUZZER_ACTIVE_LOW ? LOW : HIGH);
@@ -146,8 +168,7 @@ void buzzerOff() {
 }
 
 void updateDitLength() {
-  ditLength = 1200 / wpm;
-  charGap = ditLength * 3;  // mezera mezi znaky je 3 * ditLength
+  ditLength = 1200 / wpm;  
 }
 
 // ------------------------------------------------------------
@@ -162,6 +183,7 @@ String charToMorse(char c) {
   }
   return "";  // neznámý znak
 }
+
 
 char decodeMorse(String morse) {
   for (int i = 0; i < morseTableSize; i++) {
@@ -191,7 +213,8 @@ void updateEncoderDisplay() {
 void togglePaddleDirection() {
   paddleReversed = !paddleReversed;
   EEPROM.write(EEPROM_DIR_ADDR, paddleReversed ? 1 : 0);
-
+ 
+  // přehraje .- nebo -. 
   buzzerOn();
   delay(paddleReversed ? ditLength * 3 : ditLength);
   buzzerOff();
@@ -209,16 +232,16 @@ void handleEncoderButton() {
       buttonPressed = true;
       buttonDownTime = millis();
 
-    // změna MODE a uložení do EEPROM  
-    } else if (millis() - buttonDownTime > 1500) {   
+      // změna MODE a uložení do EEPROM
+    } else if (millis() - buttonDownTime > 1500) {
       togglePaddleDirection();
       while (digitalRead(ENC_SW) == LOW)
         ;
       buttonPressed = false;
     }
 
-   // změna WPM a uložení do EEPROM  
-  } else if (buttonPressed) {        // změna WPM
+    // změna WPM a uložení do EEPROM
+  } else if (buttonPressed) {  // změna WPM
     EEPROM.write(EEPROM_WPM_ADDR, wpm);
     lastSavedWPM = wpm;
     buttonPressed = false;
@@ -406,12 +429,14 @@ void handlePlayback() {
   }
 }
 
+// ------------------------------------------------------------
+
 void playCustomSequence() {
   int originalWPM = wpm;
 
   // Můžete zde zadat libovolnou zprávu
   receivedText = "QRV";
-  wpm = 30;  // rychlost 
+  wpm = 20;  // rychlost
   updateDitLength();
   startPlayback();
 }
@@ -423,12 +448,12 @@ ISR(PCINT2_vect) {
   bool newPinDtState = PIND & (1 << PIND5);
 
   if (newPinClkState != pinClkState) {
-    if (newPinClkState) { // náběžná hrana
+    if (newPinClkState) {  // náběžná hrana
       if (newPinDtState != newPinClkState) {
         if (wpm < maxWPM) wpm++;
       } else {
         if (wpm > minWPM) wpm--;
-      }   
+      }
       updateDitLength();
     }
   }
@@ -436,6 +461,7 @@ ISR(PCINT2_vect) {
   pinClkState = newPinClkState;
   pinDtState = newPinDtState;
 }
+
 
 // -------------------------
 // Setup
@@ -448,11 +474,11 @@ void setup() {
   pinMode(DIT_PIN, INPUT_PULLUP);
   pinMode(DAH_PIN, INPUT_PULLUP);
   pinMode(BUZZER_PIN, OUTPUT);
-  
-  pinMode(ENC_SW, INPUT_PULLUP);  
+
+  pinMode(ENC_SW, INPUT_PULLUP);
   pinMode(ENC_CLK, INPUT_PULLUP);
   pinMode(ENC_DT, INPUT_PULLUP);
-  
+
   pinMode(CLEAR_BUTTON_PIN, INPUT_PULLUP);
   pinMode(PLAY_BUTTON_PIN, INPUT_PULLUP);
 
@@ -468,9 +494,17 @@ void setup() {
   PCICR |= (1 << PCIE2);
   // Povolit PCI jen pro piny ENC_CLK a ENC_DT (PCINT20 a PCINT21)
   PCMSK2 |= (1 << PCINT20) | (1 << PCINT21);
-  sei(); // Globální povolení přerušení 
+  sei();  // Globální povolení přerušení
 
-  updateEncoderDisplay();  // Zobraz první řádek
+
+  // Nastavení interruptů pro dit a dah
+  if (paddleReversed) {
+    attachInterrupt(digitalPinToInterrupt(DIT_PIN), onDahPressed, FALLING);
+    attachInterrupt(digitalPinToInterrupt(DAH_PIN), onDitPressed, FALLING);
+  } else {
+    attachInterrupt(digitalPinToInterrupt(DIT_PIN), onDitPressed, FALLING);
+    attachInterrupt(digitalPinToInterrupt(DAH_PIN), onDahPressed, FALLING);
+  }
 
   int storedWPM = EEPROM.read(EEPROM_WPM_ADDR);
   if (storedWPM >= minWPM && storedWPM <= maxWPM) {
@@ -505,8 +539,7 @@ void setup() {
   while (isPlaying) {
     handlePlayback();   // Zpracovává přehrávání
     delay(1);           // Malá pauza pro stability
-   receivedText = "";  // smaže zprávu   
-   
+    receivedText = "";  // smaže zprávu
   }
 
   // vrátí původní WPM
@@ -514,9 +547,10 @@ void setup() {
   updateDitLength();
   lcd.clear();
 
+  updateEncoderDisplay(); // Zobraz první řádek
 
   // nastaví úvodní text
-  receivedText =  trainigText ; 
+  receivedText = trainigText;
   updateLCDText();
 }
 
@@ -527,135 +561,140 @@ void setup() {
 
 void loop() {
   unsigned long now = millis();
+  
 
- 
-  // Update display pouze když je potřeba (úspora času)
-  if (wpm != lastDisplayedWPM || 
-      paddleReversed != lastDisplayedPaddleState || 
-      now - lastDisplayUpdate > 100) {  // max každých 100ms
-    updateEncoderDisplay();
-    lastDisplayUpdate = now;
-    lastDisplayedWPM = wpm;
-    lastDisplayedPaddleState = paddleReversed;
-  }
-
-  handleEncoderButton();  
-  handlePlayback();       // Zpracování přehrávání (non-blocking)
-
-  bool ditPressedRaw = digitalRead(paddleReversed ? DAH_PIN : DIT_PIN) == LOW;
-  bool dahPressedRaw = digitalRead(paddleReversed ? DIT_PIN : DAH_PIN) == LOW;
-
-  // Paddle input pouze pokud se nepřehrává
   if (!isPlaying) {
-  if (!tonePlaying && !elementPause) {
-    // Můžeme začít nový element
-    if (ditPressedRaw) {
-      buzzerOn();
-      toneDuration = ditLength;
-      tonePlaying = true;
-      lastToneTime = now;
-      currentMorse += ".";
-      lastKeyTime = now;
-    } else if (dahPressedRaw) {
-      buzzerOn();
-      toneDuration = ditLength * 3;
-      tonePlaying = true;
-      lastToneTime = now;
-      currentMorse += "-";
-      lastKeyTime = now;
-    }
-  } else if (tonePlaying && (now - lastToneTime >= toneDuration)) {
-    // Konec tónu - začni pauzu mezi elementy
-    buzzerOff();
-    tonePlaying = false;
-    elementPause = true;
-    elementPauseStart = now;
-  } else if (elementPause && (now - elementPauseStart >= ditLength)) {
-    // Konec pauzy mezi elementy
-    elementPause = false;
-    lastKeyTime = now; // Aktualizuj čas pro detekci konce znaku
-  }
-
-  // Detekce konce znaku (žádné tlačítko stisknuto a uplynula doba charGap)
-  if (!ditPressedRaw && !dahPressedRaw && !tonePlaying && !elementPause && 
-      currentMorse.length() > 0 && (now - lastKeyTime > charGap)) {
-    char decoded = decodeMorse(currentMorse);
-    receivedText += decoded;
-    if (receivedText.length() > 60) {
-      receivedText = receivedText.substring(receivedText.length() - 60);
-    }
-    updateLCDText();
-    currentMorse = "";
-  }
-}
-  
-  // rychlý "non-blocking" delay
-  delayMicroseconds(100);  // 0.1 ms 
-
-
-// Kontrola tlačítka CLEAR / RESET
-if (digitalRead(CLEAR_BUTTON_PIN) == LOW) {
-  delay(50);  // debounce
-  if (digitalRead(CLEAR_BUTTON_PIN) == LOW) {
-    unsigned long pressStartTime = millis();
-    bool longPressDetected = false;
-    
-    // Čekáme, dokud je tlačítko stisknuto a měříme čas
-    while (digitalRead(CLEAR_BUTTON_PIN) == LOW) {
-      delay(10);
-      
-      // Pokud je tlačítko stisknuto déle než 3 sekundy, reset MCU
-      if (millis() - pressStartTime > 3000 && !longPressDetected) {
-        longPressDetected = true;
-        
-        // Zobrazit zprávu o restartu
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("RESTART...");
-        delay(1000);
-        
-        // Reset MCU
-        asm volatile ("jmp 0");  // Pro Arduino Uno/Nano
-        // Alternativně: NVIC_SystemReset(); // Pro ARM procesory (ESP32, STM32)
+    // Pokud není tón a není pauza, můžeme hrát nový element
+    if (!tonePlaying && !elementPause) {
+      if (ditHeld) {
+        buzzerOn();
+        toneDuration = ditLength;
+        tonePlaying = true;
+        lastToneTime = now;
+        currentMorse += ".";
+        lastKeyTime = now;
+      } else if (dahHeld) {
+        buzzerOn();
+        toneDuration = ditLength * 3;
+        tonePlaying = true;
+        lastToneTime = now;
+        currentMorse += "-";
+        lastKeyTime = now;
       }
     }
-    
-    // Pokud nebylo dlouhé stisknutí, provedeme normální vymazání
-    if (!longPressDetected) {
-      // Vymazání bufferu a LCD řádků 2-4
+
+    // Konec tónu → začít pauzu
+    else if (tonePlaying && (now - lastToneTime >= toneDuration)) {
+      buzzerOff();
+      tonePlaying = false;
+      elementPause = true;
+      elementPauseStart = now;
+    }
+
+    // Konec pauzy → připraven na nový element
+    else if (elementPause && (now - elementPauseStart >= ditLength)) {
+      elementPause = false;
+      lastKeyTime = now;
+      endDecode = false;
+    }
+
+    // Detekce konce znaku  →  mezera mezi znaky je minimálně ditLength * 1
+    if (!tonePlaying && !elementPause && currentMorse.length() > 0 && (now - lastKeyTime > ditLength *1 ) ) {   
+      char decoded = decodeMorse(currentMorse);
+      receivedText += decoded;
+      if (receivedText.length() > 60) {
+        receivedText = receivedText.substring(receivedText.length() - 60);
+      }
+      updateLCDText();
       currentMorse = "";
-      receivedText = "";
-      for (int row = 1; row <= 3; row++) {  // LCD řádky 2-4 (indexováno od 0)
-        lcd.setCursor(0, row);
-        lcd.print("                    ");  // 20 mezer na vymazání celého řádku
-      }
+      endDecode = true;
     }
   }
-}
-  
 
-  // Kontrola tlačítka PLAY/STOP
-  static bool lastPlayButtonState = HIGH;
-  bool currentPlayButtonState = digitalRead(PLAY_BUTTON_PIN);
+  // Detekce uvolnění tlačítek (v hlavní smyčce)
+  ditHeld = digitalRead(paddleReversed ? DAH_PIN : DIT_PIN) == LOW;
+  dahHeld = digitalRead(paddleReversed ? DIT_PIN : DAH_PIN) == LOW;
 
-  // Detekce sestupné hrany (stisknutí tlačítka)
-  if (lastPlayButtonState == HIGH && currentPlayButtonState == LOW) {
-    delay(50);  // debounce
+ // ------------------------------------------------------------------
 
-    // Ověř stav tlačítka po debounce
-    if (digitalRead(PLAY_BUTTON_PIN) == LOW) {
-      if (isPlaying) {
-        // Pokud přehrává, zastav
-        stopPlaybackNow();
 
-      } else {
-        // Pokud nepřehrává, spusť přehrávání
-        if (receivedText.length() > 0) {
-          startPlayback();
+  if (endDecode) {
+
+    handleEncoderButton();
+    handlePlayback();  // Zpracování přehrávání (non-blocking)
+
+    // -------------------------------------------------------------
+
+    // Update Encoder display
+    if (wpm != lastDisplayedWPM || paddleReversed != lastDisplayedPaddleState || now - lastDisplayUpdate > 200) {  // max každých 200ms
+      updateEncoderDisplay();
+      lastDisplayUpdate = now;
+      lastDisplayedWPM = wpm;
+      lastDisplayedPaddleState = paddleReversed;
+    }
+    
+    // -------------------------------------------------------------
+
+    // Kontrola tlačítek
+    if (now - lastButtonCheckTime >= 200) {  // max každých 200 ms
+      lastButtonCheckTime = now;
+
+      // === Kontrola tlačítka CLEAR / RESET ===
+      if (digitalRead(CLEAR_BUTTON_PIN) == LOW) {
+        delay(50);  // debounce
+        if (digitalRead(CLEAR_BUTTON_PIN) == LOW) {
+          unsigned long pressStartTime = millis();
+          bool longPressDetected = false;
+
+          // Čekáme, dokud je tlačítko stisknuto a měříme čas
+          while (digitalRead(CLEAR_BUTTON_PIN) == LOW) {
+            delay(10);
+
+            // dlouhé stisknutí > 1,5 s
+            if (millis() - pressStartTime > 1500 && !longPressDetected) {
+              longPressDetected = true;
+
+              // Zobrazit zprávu o restartu
+              lcd.clear();
+              lcd.setCursor(0, 0);
+              lcd.print("RESTART...");
+              delay(1000);
+
+              // Reset MCU
+              asm volatile("jmp 0");  // Pro Arduino Uno/Nano
+            }
+          }
+
+          // Pokud nebylo dlouhé stisknutí, provedeme normální vymazání
+          if (!longPressDetected) {
+            currentMorse = "";
+            receivedText = "";
+            for (int row = 1; row <= 3; row++) {
+              lcd.setCursor(0, row);
+              lcd.print("                    ");
+            }
+          }
         }
       }
+
+      // === Kontrola tlačítka PLAY/STOP ===
+      static bool lastPlayButtonState = HIGH;
+      bool currentPlayButtonState = digitalRead(PLAY_BUTTON_PIN);
+
+      if (lastPlayButtonState == HIGH && currentPlayButtonState == LOW) {
+        delay(50);  // debounce
+        if (digitalRead(PLAY_BUTTON_PIN) == LOW) {
+          if (isPlaying) {
+            stopPlaybackNow();
+          } else {
+            if (receivedText.length() > 0) {
+              startPlayback();
+            }
+          }
+        }
+      }
+
+      lastPlayButtonState = currentPlayButtonState;
     }
   }
-
-  lastPlayButtonState = currentPlayButtonState;
 }
