@@ -112,6 +112,7 @@ int lastDisplayedWPM = 0;
 bool lastDisplayedPaddleState = false;
 
 String receivedText = "";
+String lastReceivedText = "";
 String trainigText = "ABCDEFGHIJKLMNOPQRSTUVWXYZ 1234567890 ?/=,.";
 
 // proměnné pro kontrolu přehrávání
@@ -135,6 +136,7 @@ PlaybackState playbackState = IDLE;
 
 // --- Časovače pro kontrolu tlačítek ---
 unsigned long lastButtonCheckTime = 0;
+unsigned long endDecodeTime = 0;  // Časovač pro endDecode delay
 
 // ISR flagy
 volatile bool ditHeld = false;
@@ -610,6 +612,7 @@ void loop() {
       elementPause = false;
       lastKeyTime = now;
       endDecode = false;
+      endDecodeTime = 0;  // Reset časovače
     }
 
     // Detekce konce znaku  →  mezera mezi znaky je minimálně ditLength * 1
@@ -622,6 +625,7 @@ void loop() {
       //updateLCDText();
       currentMorse = "";
       endDecode = true;
+      endDecodeTime = now;  // Uložit čas kdy byl nastaven endDecode
     }
 
 
@@ -634,7 +638,15 @@ void loop() {
  // ------------------------------------------------------------------
 
 
-  if (endDecode) {
+  // Podmínka s 1 sekundovým zpožděním po endDecode
+  if (endDecode && (now - endDecodeTime >= 1000)) {
+
+   // obnoví LCD tex jen pokud se zmnění
+   if (receivedText != lastReceivedText) {
+      updateLCDText();
+      lastReceivedText = receivedText;
+      }
+
 
     handleEncoderButton();
     handlePlayback();  // Zpracování přehrávání (non-blocking)
@@ -703,8 +715,8 @@ void loop() {
           if (isPlaying) {
             stopPlaybackNow();
           } else {
-            if (receivedText.length() > 0) {
-              updateLCDText();
+            if (receivedText.length() > 0) {   
+              //updateLCDText();           
               startPlayback();
             }
           }
