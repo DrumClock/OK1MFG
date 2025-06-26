@@ -663,7 +663,7 @@ void loop() {
     // -------------------------------------------------------------
 
     // Kontrola tlačítek
-    if (now - lastButtonCheckTime >= 200) {  // max každých 200 ms
+    if (now - lastButtonCheckTime >= 100) {  // max každých 100 ms
       lastButtonCheckTime = now;
 
       // === Kontrola tlačítka CLEAR / RESET ===
