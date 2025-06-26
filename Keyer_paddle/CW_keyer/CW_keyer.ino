@@ -1,4 +1,3 @@
-
 /*
 Tempo „PARIS"
 Při vysílání Morseovy abecedy v akustické podobě se používají následující pravidla:
@@ -156,6 +155,21 @@ void onDahPressed() {
   dahHeld = true;
 }
 
+// Nová funkce pro nastavení interruptů podle aktuálního paddle mode
+void setupPaddleInterrupts() {
+  // Nejprve odpojíme všechny interrupty
+  detachInterrupt(digitalPinToInterrupt(DIT_PIN));
+  detachInterrupt(digitalPinToInterrupt(DAH_PIN));
+  
+  // Pak je připojíme podle aktuálního stavu paddleReversed
+  if (paddleReversed) {
+    attachInterrupt(digitalPinToInterrupt(DIT_PIN), onDahPressed, FALLING);
+    attachInterrupt(digitalPinToInterrupt(DAH_PIN), onDitPressed, FALLING);
+  } else {
+    attachInterrupt(digitalPinToInterrupt(DIT_PIN), onDitPressed, FALLING);
+    attachInterrupt(digitalPinToInterrupt(DAH_PIN), onDahPressed, FALLING);
+  }
+}
 
 // ----------------------------------------------------------
 
@@ -213,7 +227,13 @@ void updateEncoderDisplay() {
 void togglePaddleDirection() {
   paddleReversed = !paddleReversed;
   EEPROM.write(EEPROM_DIR_ADDR, paddleReversed ? 1 : 0);
- 
+  
+  // DŮLEŽITÉ: Přenastavit interrupty po změně paddle mode
+  setupPaddleInterrupts();
+  
+  // Vyčistit současný morse kód, aby se předešlo nekonzistenci
+  currentMorse = "";
+  
   // přehraje .- nebo -. 
   buzzerOn();
   delay(paddleReversed ? ditLength * 3 : ditLength);
@@ -496,16 +516,7 @@ void setup() {
   PCMSK2 |= (1 << PCINT20) | (1 << PCINT21);
   sei();  // Globální povolení přerušení
 
-
-  // Nastavení interruptů pro dit a dah
-  if (paddleReversed) {
-    attachInterrupt(digitalPinToInterrupt(DIT_PIN), onDahPressed, FALLING);
-    attachInterrupt(digitalPinToInterrupt(DAH_PIN), onDitPressed, FALLING);
-  } else {
-    attachInterrupt(digitalPinToInterrupt(DIT_PIN), onDitPressed, FALLING);
-    attachInterrupt(digitalPinToInterrupt(DAH_PIN), onDahPressed, FALLING);
-  }
-
+  // Načtení hodnot z EEPROM
   int storedWPM = EEPROM.read(EEPROM_WPM_ADDR);
   if (storedWPM >= minWPM && storedWPM <= maxWPM) {
     wpm = storedWPM;
@@ -513,6 +524,9 @@ void setup() {
 
   byte storedDir = EEPROM.read(EEPROM_DIR_ADDR);
   paddleReversed = (storedDir == 1);
+
+  // Nastavení interruptů pro dit a dah podle načteného stavu
+  setupPaddleInterrupts();
 
   lastSavedWPM = wpm;
   updateDitLength();
@@ -599,16 +613,18 @@ void loop() {
     }
 
     // Detekce konce znaku  →  mezera mezi znaky je minimálně ditLength * 1
-    if (!tonePlaying && !elementPause && currentMorse.length() > 0 && (now - lastKeyTime > ditLength *1 ) ) {   
+    if (!tonePlaying && !elementPause && currentMorse.length() > 0 && (now - lastKeyTime > ditLength * 0.8 ) ) {   
       char decoded = decodeMorse(currentMorse);
       receivedText += decoded;
       if (receivedText.length() > 60) {
         receivedText = receivedText.substring(receivedText.length() - 60);
       }
-      updateLCDText();
+      //updateLCDText();
       currentMorse = "";
       endDecode = true;
     }
+
+
   }
 
   // Detekce uvolnění tlačítek (v hlavní smyčce)
@@ -688,6 +704,7 @@ void loop() {
             stopPlaybackNow();
           } else {
             if (receivedText.length() > 0) {
+              updateLCDText();
               startPlayback();
             }
           }
