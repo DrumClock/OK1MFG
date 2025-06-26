@@ -621,8 +621,7 @@ void loop() {
       receivedText += decoded;
       if (receivedText.length() > 60) {
         receivedText = receivedText.substring(receivedText.length() - 60);
-      }
-      //updateLCDText();
+      }      
       currentMorse = "";
       endDecode = true;
       endDecodeTime = now;  // Uložit čas kdy byl nastaven endDecode
@@ -716,7 +715,6 @@ void loop() {
             stopPlaybackNow();
           } else {
             if (receivedText.length() > 0) {   
-              //updateLCDText();           
               startPlayback();
             }
           }
