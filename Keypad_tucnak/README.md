@@ -8,12 +8,12 @@
 
  # Ovládání
 
- tlačítko **`MODE`** simuluje stisk Alt+m 
- tlačítko **`BAND`** simuluje stisk Alt+b 
- tlačítko **`CAL`**  simuluje stisk Alt+c 
- tlačítko **`LOC`**  simuluje stisk Alt+v 
- tlačítko **`ROT1`** simuluje stisk CTRL+a 
- tlačítko **`ROT2`** simuluje stisk CTRL+b 
+ - tlačítko **`MODE`** simuluje stisk Alt+m 
+ - tlačítko **`BAND`** simuluje stisk Alt+b 
+ - tlačítko **`CAL`**  simuluje stisk Alt+c 
+ - tlačítko **`LOC`**  simuluje stisk Alt+v 
+ - tlačítko **`ROT1`** simuluje stisk CTRL+a 
+ - tlačítko **`ROT2`** simuluje stisk CTRL+b 
 
 
  # Programování
