@@ -8,7 +8,7 @@
 
   Umožňuje tréning Morseovky a to jak vysílání tak příjem.
     
-  Tempo „PARIS"<br>
+  
   Při vysílání Morseovy abecedy v akustické podobě se používají následující pravidla:<br> 
 
  - základní časovou jednotkou je délka tečky
@@ -17,7 +17,10 @@
  - zvuková pauza mezi značkami má stejnou dobu trvání jako jedna čárka
  - zvuková pauza mezi slovy má stejnou dobu trvání jako sedm teček	
  <br>
- <br> 
+ 
+# Tempo „PARIS"
+<br>
+
 <p align="center">
   <img src="https://github.com/DrumClock/OK1MFG/blob/main/Keyer_paddle/paris.png" alt="Ukázka" width="600">
 </p>
