@@ -19,6 +19,7 @@
  # Programování
  
   Je použita deska **Arduino Promicro** z čípem **Atmega32U4** pro simulaci klávesnice.
+  U této desky je možno nastavit max 16 tlačítek.
   Programování tlačítek se provádí v souboru **`button_sequences.h`** například:
   
 <pre> ``` 
