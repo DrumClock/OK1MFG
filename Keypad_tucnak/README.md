@@ -22,7 +22,7 @@
   U této desky je možno nastavit max 16 tlačítek.
   Programování tlačítek se provádí v souboru **`button_sequences.h`** například:
   
-<pre> ``` 
+<pre> 
 
 #define BUT_1  "ALT+m"    // přepíná režimy CW/SSB
 #define BUT_2  "ALT+b"    // přepne pásmo
@@ -31,7 +31,7 @@
 #define BUT_5  "CTRL+a"   // otočí první rotátor na aktuální azimut
 #define BUT_6  "CTRL+b"   // otočí druhý rotátor na aktuální azimut   
 
-``` </pre>
+ </pre>
  
 # složka CAD
 - obsahuje soubor krabičky pro 3D tisk 
