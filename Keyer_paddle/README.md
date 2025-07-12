@@ -36,12 +36,16 @@
    Spustí nebo zastaví přehrávání  posledních 60-ti přijatých znaků na displeji<br>
    
  - encoder **`WPM`**  nastavení rychlosti a pádla <br>
-   Otáčením se nastaví WPM rýchlost pro vysílání i příjem znaků.<br>
+   Otáčením se nastaví WPM rychlost pro vysílání i příjem znaků.<br>
    Krátký stisk uloží nastavení WPM a MODE do EEPROM <br>
    Dlouhý stisk přehodí MODE .- nebo -. pro paddle<br>
 
  # Programování 
   Je použita deska **Arduino Nano** a umí dekédévat tyto znaky:
+  
+  ABCDEFGHIJKLMNOPQRSTUVWXYZ 1234567890 ?/=,.
+  
+  Znaky je možno přidat zde:
   
   <pre> ``` 
    // Pole s definicemi morseovky  
@@ -59,6 +63,28 @@
   { '.', ".-.-.-" }, { '*', "*" }, { ' ', " " }
 };
   ``` </pre>
+  
+  Při vysílání se znaky dekodují dle pravidel PARIS, takže je dobré doržet mezeru mezi znaky.
+  Pokud je na displeji zobrazen zanak "hvězdičky" znamená to, že znak není v tabulce nebo je špatně zahraný.
+  Bohužel dekodování není 100% takže znak může být správny ale mezera mezi znaky je příliš krátká aby se 
+  dekédoval správně. Znaky se nevypisují ihned ale po pauze cca 1s bez stisku paddle.
+  <br>
+  V této části de definice pro dekodování je nastavena na **`ditLength * 0.8`** pro lepší dekodování
+  ale správně by měla být **`ditLength * 1`**
+  
+  <pre> ``` 
+    // Detekce konce znaku  →  mezera mezi znaky je minimálně ditLength * 1
+    if (!tonePlaying && !elementPause && currentMorse.length() > 0 && (now - lastKeyTime > ditLength * 0.8 ) ) {   
+      char decoded = decodeMorse(currentMorse);
+      receivedText += decoded;
+      if (receivedText.length() > 60) {
+        receivedText = receivedText.substring(receivedText.length() - 60);
+      }      
+      currentMorse = "";
+      endDecode = true;
+      endDecodeTime = now;  // Uložit čas kdy byl nastaven endDecode
+	  
+ ``` </pre>
  
 # složka CAD
 - obsahuje soubor krabičky pro 3D tisk 
