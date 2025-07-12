@@ -23,16 +23,60 @@
 </p>
 <br> 
 
-| Písmeno | Morse | Časování              | Počty jednotek | Poznámka               |
-|---------|--------|------------------------|-----------------|------------------------|
-| P       | di da da di | 1 1 3 1 3 1 1 (3)      | 14              |                        |
-| A       | di da       | 1 1 3 (3)              | 8               |                        |
-| R       | di da di    | 1 1 3 1 1 (3)          | 10              |                        |
-| I       | di di       | 1 1 1 (3)              | 6               |                        |
-| S       | di di di    | 1 1 1 1 1 [7]          | 12              |                        |
-| **Celkem** | —        | —                      | **50**          |                        |
-
-*`( )` = mezera mezi znaky, `[ ]` = mezera mezi slovy*
+<div align="center">
+<table>
+  <tr>
+    <th>Písmeno</th>
+    <th>Morse</th>
+    <th>Časování</th>
+    <th>Počty jednotek</th>
+    <th>Poznámka</th>
+  </tr>
+  <tr>
+    <td>P</td>
+    <td>di da da di</td>
+    <td>1 1 3 1 3 1 1 (3)</td>
+    <td>14</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>A</td>
+    <td>di da</td>
+    <td>1 1 3 (3)</td>
+    <td>8</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>R</td>
+    <td>di da di</td>
+    <td>1 1 3 1 1 (3)</td>
+    <td>10</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>I</td>
+    <td>di di</td>
+    <td>1 1 1 (3)</td>
+    <td>6</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>S</td>
+    <td>di di di</td>
+    <td>1 1 1 1 1 [7]</td>
+    <td>12</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><b>Celkem</b></td>
+    <td>—</td>
+    <td>—</td>
+    <td><b>50</b></td>
+    <td></td>
+  </tr>
+</table>
+<p><i>( ) = mezera mezi znaky &nbsp;&nbsp; [ ] = mezera mezi slovy</i></p>
+</div>
 
 <br> 
 <br> 
