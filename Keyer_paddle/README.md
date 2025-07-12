@@ -43,7 +43,7 @@
  # Programování 
   Je použita deska **Arduino Nano** a umí dekédévat tyto znaky:
   
-  ABCDEFGHIJKLMNOPQRSTUVWXYZ 1234567890 ?/=,.
+  **`ABCDEFGHIJKLMNOPQRSTUVWXYZ 1234567890 ?/=,.`**
   
   Znaky je možno přidat zde:
   
