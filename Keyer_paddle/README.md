@@ -38,7 +38,7 @@
  - encoder **`WPM`**  nastavení rychlosti a pádla <br>
    Otáčením se nastaví WPM rychlost pro vysílání i příjem znaků.<br>
    Krátký stisk uloží nastavení WPM a MODE do EEPROM <br>
-   Dlouhý stisk přehodí MODE **`.- `**nebo **`-.`** pro paddle<br>
+   Dlouhý stisk přehodí MODE **`.-`** nebo **`-.`** pro paddle<br>
 
  # Programování 
   Je použita deska **Arduino Nano** a umí dekédévat tyto znaky:
