@@ -7,25 +7,34 @@
   Umožňuje tréning Morseovky a to jak vysílání tak příjem.
     
   Tempo „PARIS"<br>
-  Při vysílání Morseovy abecedy v akustické podobě se používají následující pravidla:<br>
+  Při vysílání Morseovy abecedy v akustické podobě se používají následující pravidla:<br> 
 
  - základní časovou jednotkou je délka tečky
  - čárka má stejnou dobu trvání jako tři tečky
  - zvuková pauza uvnitř značky má stejnou dobu trvání jako jedna tečka
  - zvuková pauza mezi značkami má stejnou dobu trvání jako jedna čárka
- - zvuková pauza mezi slovy má stejnou dobu trvání jako sedm teček
-<br>
-	Tyto poměry umožňují sluchem zcela spolehlivě rozlišit tečku od čárky i druh akustické pauzy.
-	Za další, poměr celkové doby trvání vysílání tečky nebo čárky včetně pauzy uvnitř značky je 2:1,
-	což usnadňuje udržet konstantní rychlost vysílání. 
-	
+ - zvuková pauza mezi slovy má stejnou dobu trvání jako sedm teček	
+ <br>
+ <br> 
+
+ ![Rotator_frame](https://github.com/DrumClock/OK1MFG/blob/main/Keyer_paddle/paris.png)
+  <br> 
+
+U každého znaku je uveden jen počet elementů samotného znaku, ve skutečnosti je nutné za každým znakem ještě vidět meziznakovou (3 prvky) nebo mezislovní (7 prvků) mezeru.
+
  <br> 
 	Pro určení rychlosti vysílání se bere jako reference pětipísmenné slovo „PARIS" (celkem 10 teček, 4 čárky, 4 mezery).
 	Celková doba jeho odvysílání včetně mezery za slovem je tedy 50 základních jednotek (délek teček). 
 	Pokud tedy například hovoříme o tempu vysílání 12 slov za minutu (WPM, words per minute), 
 	odpovídá to právě rychlosti průměrně jednoho písmene (znaku) za sekundu (12*5 = 60 znaků za minutu), 
-	délka tečky je 60/(12*50) = 0,1 sekundy.<br>
-
+	délka tečky je 60/(12*50) = 0,1 sekundy.
+ <br>
+ <br>
+	Tyto poměry umožňují sluchem zcela spolehlivě rozlišit tečku od čárky i druh akustické pauzy.
+	Za další, poměr celkové doby trvání vysílání tečky nebo čárky včetně pauzy uvnitř značky je 2:1,
+	což usnadňuje udržet konstantní rychlost vysílání. 
+ <br>
+ 
  # Ovládání
 
  - červené tlačítko **`X`**  <br>
