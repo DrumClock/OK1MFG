@@ -32,50 +32,44 @@
     <th>Písmeno</th>
     <th>Morse</th>
     <th>Časování</th>
-    <th>Počty jednotek</th>
-    <th>Poznámka</th>
+    <th>Počty jednotek</th>    
   </tr>
   <tr>
     <td>P</td>
     <td>di da da di</td>
     <td>1 1 3 1 3 1 1 (3)</td>
-    <td>14</td>
-    <td></td>
+    <td>14</td>    
   </tr>
   <tr>
     <td>A</td>
     <td>di da</td>
     <td>1 1 3 (3)</td>
-    <td>8</td>
-    <td></td>
+    <td>8</td>    
   </tr>
   <tr>
     <td>R</td>
     <td>di da di</td>
     <td>1 1 3 1 1 (3)</td>
-    <td>10</td>
-    <td></td>
+    <td>10</td>    
   </tr>
   <tr>
     <td>I</td>
     <td>di di</td>
     <td>1 1 1 (3)</td>
-    <td>6</td>
-    <td></td>
+    <td>6</td>   
   </tr>
   <tr>
     <td>S</td>
     <td>di di di</td>
     <td>1 1 1 1 1 [7]</td>
     <td>12</td>
-    <td></td>
+   
   </tr>
   <tr>
     <td><b>Celkem</b></td>
     <td>—</td>
     <td>—</td>
-    <td><b>50</b></td>
-    <td></td>
+    <td><b>50</b></td>   
   </tr>
 </table>
 <p><i>( ) = mezera mezi znaky &nbsp;&nbsp; [ ] = mezera mezi slovy</i></p>
