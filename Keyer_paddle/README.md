@@ -61,8 +61,15 @@
   <tr>
     <td>S</td>
     <td>di di di</td>
-    <td>1 1 1 1 1 [7]</td>
-    <td>12</td>
+    <td>1 1 1 1 1 (3)</td>
+    <td>8</td>
+   
+  </tr>
+  <tr>
+    <td> </td>
+    <td> </td>
+    <td> [4]</td>
+    <td>4</td>
    
   </tr>
   <tr>
