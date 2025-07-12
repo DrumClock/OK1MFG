@@ -16,10 +16,10 @@
  - zvuková pauza mezi slovy má stejnou dobu trvání jako sedm teček	
  <br>
  <br> 
-
- ![Rotator_frame](https://github.com/DrumClock/OK1MFG/blob/main/Keyer_paddle/paris.png)
-  <br> 
-
+<p align="center">
+  <img src="https://github.com/DrumClock/OK1MFG/blob/main/Keyer_paddle/paris.png" alt="Ukázka" width="600">
+</p>
+<br> 
 U každého znaku je uveden jen počet elementů samotného znaku, ve skutečnosti je nutné za každým znakem ještě vidět meziznakovou (3 prvky) nebo mezislovní (7 prvků) mezeru.
 
  <br> 
