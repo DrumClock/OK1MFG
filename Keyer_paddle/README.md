@@ -47,7 +47,7 @@
   
   Znaky je možno přidat zde:
   
-  <pre> ``` 
+  <pre> 
    // Pole s definicemi morseovky  
  const MorseCode morseTable[] = {
   { 'A', ".-" }, { 'B', "-..." }, { 'C', "-.-." }, { 'D', "-.." },
@@ -62,7 +62,7 @@
   { '?', "..--.." }, { '/', "-..-." }, { '=', "-...-" }, { ',', "--..--" }, 
   { '.', ".-.-.-" }, { '*', "*" }, { ' ', " " }
 };
-  ``` </pre>
+   </pre>
   
   Při vysílání se znaky dekodují dle pravidel PARIS, takže je dobré doržet mezeru mezi znaky.
   Pokud je na displeji zobrazen zanak "hvězdičky" znamená to, že znak není v tabulce nebo je špatně zahraný.
@@ -72,7 +72,7 @@
   V této části de definice pro dekodování je nastavena na **`ditLength * 0.8`** pro lepší dekodování
   ale správně by měla být **`ditLength * 1`**
   
-  <pre> ``` 
+  <pre> 
     // Detekce konce znaku  →  mezera mezi znaky je minimálně ditLength * 1
     if (!tonePlaying && !elementPause && currentMorse.length() > 0 && (now - lastKeyTime > ditLength * 0.8 ) ) {   
       char decoded = decodeMorse(currentMorse);
@@ -84,7 +84,7 @@
       endDecode = true;
       endDecodeTime = now;  // Uložit čas kdy byl nastaven endDecode
 	  
- ``` </pre>
+  </pre>
  
 # složka CAD
 - obsahuje soubor krabičky pro 3D tisk 
