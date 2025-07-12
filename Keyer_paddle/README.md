@@ -1,6 +1,8 @@
 # CW Paddle-Key
 
-![Rotator_frame](https://github.com/DrumClock/OK1MFG/raw/main/Keyer_paddle/IMG_2.jpg)
+<p align="center">
+  <img src="https://github.com/DrumClock/OK1MFG/raw/main/Keyer_paddle/IMG_2.jpg" alt="Ukázka" width="800">
+</p>
 
 # Popis
 
