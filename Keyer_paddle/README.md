@@ -69,7 +69,7 @@
   Bohužel dekodování není 100% takže znak může být správny ale mezera mezi znaky je příliš krátká aby se 
   dekédoval správně. Znaky se nevypisují ihned ale po pauze cca 1s bez stisku paddle.
   <br>
-  V této části de definice pro dekodování je nastavena na **`ditLength * 0.8`** pro lepší dekodování
+  V této části definice pro dekodování je nastavena na parametr **`ditLength * 0.8`** pro lepší dekodování
   ale správně by měla být **`ditLength * 1`**
   
   <pre> 
