@@ -22,9 +22,20 @@
   <img src="https://github.com/DrumClock/OK1MFG/blob/main/Keyer_paddle/paris.png" alt="Ukázka" width="600">
 </p>
 <br> 
-U každého znaku je uveden jen počet elementů samotného znaku, ve skutečnosti je nutné za každým znakem ještě vidět meziznakovou (3 prvky) nebo mezislovní (7 prvků) mezeru.
 
- <br> 
+| Písmeno | Morse | Časování              | Počty jednotek | Poznámka               |
+|---------|--------|------------------------|-----------------|------------------------|
+| P       | di da da di | 1 1 3 1 3 1 1 (3)      | 14              |                        |
+| A       | di da       | 1 1 3 (3)              | 8               |                        |
+| R       | di da di    | 1 1 3 1 1 (3)          | 10              |                        |
+| I       | di di       | 1 1 1 (3)              | 6               |                        |
+| S       | di di di    | 1 1 1 1 1 [7]          | 12              |                        |
+| **Celkem** | —        | —                      | **50**          |                        |
+
+*`( )` = mezera mezi znaky, `[ ]` = mezera mezi slovy*
+
+<br> 
+<br> 
 	Pro určení rychlosti vysílání se bere jako reference pětipísmenné slovo „PARIS".
 	Celková doba jeho odvysílání včetně mezery za slovem je tedy 50 základních jednotek (délek teček). 
 	Pokud tedy například hovoříme o tempu vysílání 12 slov za minutu (WPM, words per minute), 
