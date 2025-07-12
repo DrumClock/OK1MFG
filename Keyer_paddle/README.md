@@ -23,7 +23,7 @@
 U každého znaku je uveden jen počet elementů samotného znaku, ve skutečnosti je nutné za každým znakem ještě vidět meziznakovou (3 prvky) nebo mezislovní (7 prvků) mezeru.
 
  <br> 
-	Pro určení rychlosti vysílání se bere jako reference pětipísmenné slovo „PARIS" (celkem 10 teček, 4 čárky, 4 mezery).
+	Pro určení rychlosti vysílání se bere jako reference pětipísmenné slovo „PARIS".
 	Celková doba jeho odvysílání včetně mezery za slovem je tedy 50 základních jednotek (délek teček). 
 	Pokud tedy například hovoříme o tempu vysílání 12 slov za minutu (WPM, words per minute), 
 	odpovídá to právě rychlosti průměrně jednoho písmene (znaku) za sekundu (12*5 = 60 znaků za minutu), 
