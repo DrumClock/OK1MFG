@@ -18,7 +18,7 @@
 
  # Programování
  
-  Je použita deska **Arduino Promicro** z čipem **Atmega32U4** pro simulaci klávesnice.
+  Je použita deska **Arduino Promicro** s čipem **Atmega32U4** pro simulaci klávesnice (HID).
   U této desky je možno nastavit max 16 tlačítek.
   Programování tlačítek se provádí v souboru **`button_sequences.h`** například:
   
