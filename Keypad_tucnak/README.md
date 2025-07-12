@@ -18,7 +18,8 @@
 
  # Programování
  
-  Programování tlačítek se provádí v souboru button_sequences.h například:
+  Je použita deska **Arduino Promicro** z čípem **Atmega32U4** pro simulaci klávesnice.
+  Programování tlačítek se provádí v souboru **`button_sequences.h`** například:
   
 <pre> ``` 
 
