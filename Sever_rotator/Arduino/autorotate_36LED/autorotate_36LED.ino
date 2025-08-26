@@ -1,4 +1,3 @@
-
 /*
  ###############  VERZE - 24.8.2025  #####################
 
@@ -456,7 +455,6 @@ if (pos != lastPos) {
     lastChangeTime = millis();  // Uložení času poslední změny    
    
 }
-
   
   // Automatické zhasnutí modré LED po uplynutí intervalu od poslední změny pozice
   if (millis() - lastChangeTime > InactiveTime && AutoRotate == -1.0) {
