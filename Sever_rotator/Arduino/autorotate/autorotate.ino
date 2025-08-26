@@ -328,6 +328,7 @@ void setup() {
   pinMode(ENABLE_PWM, OUTPUT);
   pinMode(CW_RUN_PIN, OUTPUT);
   pinMode(CCW_RUN_PIN, OUTPUT);
+  
   digitalWrite(PIN_LED_MOTOR, LOW);
 
   digitalWrite(ENABLE_PWM, LOW);
@@ -344,6 +345,7 @@ void setup() {
   // načtení kalibrace potenciometru z EEPROM  
   loadCurrentProfile();                   // Načti číslo profilu z EEPROM
   loadProfileFromEEPROM(currentProfile);  // Načti data profilu
+  
   // reset encoderu při startu na arimut 0 (sever)
   lastPos = 0;                // Uložení pozice sever
   lastChangeTime = millis();  // Uložení času poslední změny  
@@ -431,6 +433,8 @@ void loop() {
 
 
   // ############################# Nastavení AUTOROTACE (KY-040 Rotary Encoder) #############################
+
+
 long pos = enc.read() / 4;  // Zmenšení kroku
 
 if (pos != lastPos) {   
