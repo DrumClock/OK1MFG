@@ -1,5 +1,5 @@
 /*
- ###############  VERZE - 24.8.2025  #####################
+ ###############  VERZE - 30.8.2025  #####################
 
  - Ovládání motoru rotátoru pomocí H-můstku 
  - Snímání azimutu pomocí potenciometru (napěťový dělič)
@@ -74,7 +74,7 @@
 #define CCW_BUTTON 7  // Tlačítko CCW
 #define CW_BUTTON 8   // Tlačítko CW
 
-// LED motor is Running
+// LED - rotace
 #define PIN_LED_MOTOR  9    
 
 // Piny pro BTS7960 - motor rotátoru
@@ -127,12 +127,15 @@ int displayBrightness = 0x01;              // Jas displeje
 
 // Neopixel ring LED
 int NumPixels = 60;                   // počet LED
-int LedBrightness = 2;                // JAS led pásku 10
+int RingBrightness = 2;                // JAS led pásku 10
 float DegPerLED = 360.0 / NumPixels;  // Počet stupňů na jednu LED
 
 
 // Output CW / CCW
 unsigned long currentMillis = millis();
+
+// LED - rotace
+int LedBrightness = 10;  //PWM hodnota jaso 0-255
 
 
 // Parametry řízení motoru BTS7960
@@ -313,7 +316,7 @@ void setup() {
   Serial.begin(9600);  // Inicializace sériového výstupu
 
   strip.begin();
-  strip.setBrightness(LedBrightness);
+  strip.setBrightness(RingBrightness);
   strip.show();  // Inicializace LED pásu
 
   display.setBrightness(displayBrightness);  //0x0a
@@ -325,10 +328,12 @@ void setup() {
   pinMode(CW_BUTTON, INPUT_PULLUP);
   pinMode(CCW_BUTTON, INPUT_PULLUP);
 
+  pinMode(PIN_LED_MOTOR, OUTPUT);
+
   pinMode(ENABLE_PWM, OUTPUT);
   pinMode(CW_RUN_PIN, OUTPUT);
   pinMode(CCW_RUN_PIN, OUTPUT);
-  
+    
   digitalWrite(PIN_LED_MOTOR, LOW);
 
   digitalWrite(ENABLE_PWM, LOW);
@@ -552,11 +557,11 @@ if (pos != lastPos) {
   }
 
 
-   // LED - motor is running
+   // LED - rotace
    if (isRunning) {  // pokud se motor rotátoru otáčí
-       digitalWrite(PIN_LED_MOTOR, HIGH); 
+       analogWrite(PIN_LED_MOTOR, LedBrightness);  // zapnuto
       } else {  
-       digitalWrite(PIN_LED_MOTOR, LOW); 
+       analogWrite(PIN_LED_MOTOR, 0); // vypnuto
       }
    
 
