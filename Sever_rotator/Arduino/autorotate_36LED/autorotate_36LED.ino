@@ -1,5 +1,5 @@
 /*
- ###############  VERZE - 24.8.2025  #####################
+ ###############  VERZE - 30.8.2025  #####################
 
  - Ovládání motoru rotátoru pomocí H-můstku 
  - Snímání azimutu pomocí potenciometru (napěťový dělič)
@@ -74,7 +74,7 @@
 #define CCW_BUTTON 7  // Tlačítko CCW
 #define CW_BUTTON 8   // Tlačítko CW
 
-// LED motor is Running
+// LED - rotace
 #define PIN_LED_MOTOR  9    
 
 // Piny pro BTS7960 - motor rotátoru
@@ -127,12 +127,15 @@ int displayBrightness = 0x01;              // Jas displeje
 
 // Neopixel ring LED
 int NumPixels = 36;                   // počet LED
-int LedBrightness = 2;                // JAS led pásku 10
+int RingBrightness = 2;                // JAS led pásku 10
 float DegPerLED = 360.0 / NumPixels;  // Počet stupňů na jednu LED
 
 
 // Output CW / CCW
 unsigned long currentMillis = millis();
+
+// LED - rotace
+int LedBrightness = 10;  //PWM hodnota jaso 0-255
 
 
 // Parametry řízení motoru BTS7960
@@ -303,7 +306,7 @@ void test_LED_DISPLAY(int interval = 1) {
   display.clear();
 }
 
- 
+
 // ################################################################
 // ############################# setup ############################
 // ################################################################
@@ -313,7 +316,7 @@ void setup() {
   Serial.begin(9600);  // Inicializace sériového výstupu
 
   strip.begin();
-  strip.setBrightness(LedBrightness);
+  strip.setBrightness(RingBrightness);
   strip.show();  // Inicializace LED pásu
 
   display.setBrightness(displayBrightness);  //0x0a
@@ -325,16 +328,18 @@ void setup() {
   pinMode(CW_BUTTON, INPUT_PULLUP);
   pinMode(CCW_BUTTON, INPUT_PULLUP);
 
+  pinMode(PIN_LED_MOTOR, OUTPUT);
+
   pinMode(ENABLE_PWM, OUTPUT);
   pinMode(CW_RUN_PIN, OUTPUT);
   pinMode(CCW_RUN_PIN, OUTPUT);
-  
+    
   digitalWrite(PIN_LED_MOTOR, LOW);
 
   digitalWrite(ENABLE_PWM, LOW);
   digitalWrite(CW_RUN_PIN, LOW);
   digitalWrite(CCW_RUN_PIN, LOW);
-  
+
   pinMode(BUTTON_CAL_PIN, INPUT_PULLUP);
   pinMode(BUTTON_SET_PIN, INPUT_PULLUP);
   pinMode(BUTTON_FULL_PIN, INPUT_PULLUP);
@@ -345,7 +350,7 @@ void setup() {
   // načtení kalibrace potenciometru z EEPROM  
   loadCurrentProfile();                   // Načti číslo profilu z EEPROM
   loadProfileFromEEPROM(currentProfile);  // Načti data profilu
-
+  
   // reset encoderu při startu na arimut 0 (sever)
   lastPos = 0;                // Uložení pozice sever
   lastChangeTime = millis();  // Uložení času poslední změny  
@@ -386,7 +391,7 @@ void loop() {
 
 
   // #############################  Zobrazení azimutu (Neopixel LED + displej)  #############################
- 
+
   // Převod úhlu na index LED
   int ledIndex = round(lastAngle / DegPerLED) % NumPixels;  
   
@@ -433,8 +438,8 @@ void loop() {
 
 
   // ############################# Nastavení AUTOROTACE (KY-040 Rotary Encoder) #############################
-  
- 
+
+
 long pos = enc.read() / 4;  // Zmenšení kroku
 
 if (pos != lastPos) {   
@@ -455,7 +460,7 @@ if (pos != lastPos) {
     lastChangeTime = millis();  // Uložení času poslední změny    
    
 }
-  
+
   // Automatické zhasnutí modré LED po uplynutí intervalu od poslední změny pozice
   if (millis() - lastChangeTime > InactiveTime && AutoRotate == -1.0) {
     // zhasni modrou LED, pokud na dané pozici není jiná aktivní barva
@@ -552,11 +557,11 @@ if (pos != lastPos) {
   }
 
 
-   // LED - motor is running
+   // LED - rotace
    if (isRunning) {  // pokud se motor rotátoru otáčí
-       digitalWrite(PIN_LED_MOTOR, HIGH); 
+       analogWrite(PIN_LED_MOTOR, LedBrightness);  // zapnuto
       } else {  
-       digitalWrite(PIN_LED_MOTOR, LOW); 
+       analogWrite(PIN_LED_MOTOR, 0); // vypnuto
       }
    
 
