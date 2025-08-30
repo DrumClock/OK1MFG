@@ -992,12 +992,14 @@ void Hamlib_Tucnak() {
             Hamlib_Azimuth = az;
             Hamlib_Elevation = el;
 
-
             // nastavení Azimutu a elevace z progamu Tučňák (Alt+R)
             AutoRotate = Hamlib_Azimuth;
             lastElevation = Hamlib_Elevation;
-            
 
+            // Převod úhlu na index LED
+            int ledIndex = round(Hamlib_Azimuth / DegPerLED) % NumPixels;  
+            ledPos = ledIndex;  // pozice modré LED     
+         
             display.showNumberDec(Hamlib_Azimuth, false);  // potlačí úvodní "0"
           }
         }
