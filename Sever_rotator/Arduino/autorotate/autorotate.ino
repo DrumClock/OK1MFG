@@ -135,7 +135,7 @@ float DegPerLED = 360.0 / NumPixels;  // Počet stupňů na jednu LED
 unsigned long currentMillis = millis();
 
 // LED - rotace
-int LedBrightness = 10;  //PWM hodnota jaso 0-255
+int LedBrightness = 40;  //PWM hodnota jasu LED 0-255
 
 
 // Parametry řízení motoru BTS7960
