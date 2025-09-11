@@ -494,6 +494,7 @@ if (pos != lastPos) {
 
   // ############################# Automatická Rotace anteny (motor) #############################
 
+  /*
   if (AutoRotate != -1.0) {
 
     //Serial.print("AutoRotate aktivní > ");Serial.print(" antena: ");Serial.print(angle);Serial.print(" rotace: ");Serial.print(AutoRotate);Serial.println(" < ");
@@ -510,7 +511,40 @@ if (pos != lastPos) {
       stop_AutoRotate();
     }
   }
+  */
 
+  if (AutoRotate != -1.0) {
+    float from = fmod(angle, 360.0);
+    float to = fmod(AutoRotate, 360.0);
+
+    // CW cesta
+    float cw = to - from;
+    if (cw < 0) cw += 360.0;
+
+    // CCW cesta
+    float ccw = from - to;
+    if (ccw < 0) ccw += 360.0;
+
+    // Vybereme kratší cestu
+    if (min(cw, ccw) > HYSTERESIS_END_ANGLE) {
+      if (cw <= ccw) {
+        // Ověříme, že nepřekročí MaxAngle
+        if ((angle + cw) <= MaxAngle) {
+          CW_Motor();
+        } else {
+          CCW_Motor(); // CW není možná, zkusíme CCW
+        }
+      } else {
+        if ((angle - ccw) >= 0) {
+          CCW_Motor();
+        } else {
+          CW_Motor(); // CCW není možná, zkusíme CW
+        }
+      }
+    } else {
+      stop_AutoRotate(); // Jsme v toleranci
+    }
+  }
 
   // ############################# Manuální Rotace anteny (motor) #############################
 
