@@ -1,5 +1,5 @@
 /*
- ###############  VERZE - 30.8.2025  #####################
+ ###############  VERZE - 12.9.2025  #####################
 
  - Ovládání motoru rotátoru pomocí H-můstku 
  - Snímání azimutu pomocí potenciometru (napěťový dělič)
@@ -481,11 +481,7 @@ if (pos != lastPos) {
       // Uložení aktuálního úhlu do proměnné AutoRotate
       AutoRotate = (float)ledPos / NumPixels * 360.0;
       //Serial.print("Úhel uložen do AutoRotate: ");Serial.println(AutoRotate, 2);
-
-      if (AutoRotate > angle && !direction || AutoRotate < angle && direction) {
-        stopMotor();  // stop motor pri zmene autorotace do protismeru
-      }
-
+	  
       Auto_display();  // zobrazeni 'Auto' na displeji
       delay(500);      // Zpoždění pro debouncing tlačítka
     }
@@ -494,57 +490,47 @@ if (pos != lastPos) {
 
   // ############################# Automatická Rotace anteny (motor) #############################
 
-  /*
   if (AutoRotate != -1.0) {
-
-    //Serial.print("AutoRotate aktivní > ");Serial.print(" antena: ");Serial.print(angle);Serial.print(" rotace: ");Serial.print(AutoRotate);Serial.println(" < ");
-    float angleDiff = AutoRotate - angle;
-
+    // AutoRotate je azimut 0-360°, motor může být 0-400°
+    // Pro azimuty blízko 0° máme dvě možnosti pozice motoru
+    
+    float targetPos1 = AutoRotate;         // Přímé mapování (0-360°)
+    float targetPos2 = AutoRotate + 360.0; // přes "sever" pro azimuty 0-40° (360-400°)
+    
+    float currentPos = angle;  // snímač uhlu motoru 0-400°
+    float diff1 = abs(targetPos1 - currentPos);
+    float diff2 = abs(targetPos2 - currentPos);
+    
+    // Vyber pozici s kratší dráhou
+    float targetMotorPos;
+    if (targetPos2 <= MaxAngle && diff2 < diff1) {
+        targetMotorPos = targetPos2;  // Použij vyšší pozici (360-400°)
+    } else {
+        targetMotorPos = targetPos1;  // Použij přímou pozici (0-360°)
+    }
+    
+    // Kontrola, zda je cílová pozice v rozsahu motoru
+    if (targetMotorPos < 0 || targetMotorPos > MaxAngle) {
+        // Cíl je mimo rozsah motoru - zastavíme
+        stop_AutoRotate();
+        return;
+    }
+    
+    // Výpočet rozdílu mezi cílovou a aktuální pozicí motoru
+    float angleDiff = targetMotorPos - currentPos;
+    
+    // Kontrola tolerance
     if (abs(angleDiff) > HYSTERESIS_END_ANGLE) {
-      if (angleDiff > 0) {  // Cílový úhel je větší než aktuální
-        CW_Motor();
-      } else {  // Cílový úhel je menší než aktuální
-        CCW_Motor();
-      }
-    } else {
-      // Pokud jsme v tolerančním pásmu, zastavíme autorotaci
-      stop_AutoRotate();
-    }
-  }
-  */
-
-  if (AutoRotate != -1.0) {
-    float from = fmod(angle, 360.0);
-    float to = fmod(AutoRotate, 360.0);
-
-    // CW cesta
-    float cw = to - from;
-    if (cw < 0) cw += 360.0;
-
-    // CCW cesta
-    float ccw = from - to;
-    if (ccw < 0) ccw += 360.0;
-
-    // Vybereme kratší cestu
-    if (min(cw, ccw) > HYSTERESIS_END_ANGLE) {
-      if (cw <= ccw) {
-        // Ověříme, že nepřekročí MaxAngle
-        if ((angle + cw) <= MaxAngle) {
-          CW_Motor();
-        } else {
-          CCW_Motor(); // CW není možná, zkusíme CCW
+        if (angleDiff > 0) {  // Cílová pozice je větší než aktuální
+            CW_Motor();
+        } else {  // Cílová pozice je menší než aktuální
+            CCW_Motor();
         }
-      } else {
-        if ((angle - ccw) >= 0) {
-          CCW_Motor();
-        } else {
-          CW_Motor(); // CCW není možná, zkusíme CW
-        }
-      }
     } else {
-      stop_AutoRotate(); // Jsme v toleranci
+        // Pokud jsme v tolerančním pásmu, zastavíme autorotaci
+        stop_AutoRotate();
     }
-  }
+}
 
   // ############################# Manuální Rotace anteny (motor) #############################
 
@@ -644,31 +630,42 @@ void stop_AutoRotate() {
 
 
 void CW_Motor() {
-  direction = true;  // CW
-  digitalWrite(CCW_RUN_PIN, LOW);
-  digitalWrite(CW_RUN_PIN, HIGH);
-  delay(10);
-  accelerateMotor(maxSpeed, true);  // zrychlení (up)
-  isRunning = true;
+    // Pokud motor běží opačným směrem (CCW), nejdřív ho zastav
+    if (isRunning && direction == false) {
+        stopMotor();
+    }
+    
+    direction = true;  // CW
+    digitalWrite(CCW_RUN_PIN, LOW);
+    digitalWrite(CW_RUN_PIN, HIGH);
+    delay(10);
+    accelerateMotor(maxSpeed, true);  // zrychlení (up)
+    isRunning = true;
 }
 
+
 void CCW_Motor() {
-  direction = false;  // CCW
-  digitalWrite(CW_RUN_PIN, LOW);
-  digitalWrite(CCW_RUN_PIN, HIGH);
-  delay(10);
-  accelerateMotor(maxSpeed, true);  // zrychlení (up)
-  isRunning = true;
+    // Pokud motor běží opačným směrem (CW), nejdřív ho zastav
+    if (isRunning && direction == true) {
+        stopMotor();
+    }
+    
+    direction = false;  // CCW
+    digitalWrite(CW_RUN_PIN, LOW);
+    digitalWrite(CCW_RUN_PIN, HIGH);
+    delay(10);
+    accelerateMotor(maxSpeed, true);  // zrychlení (up)
+    isRunning = true;
 }
 
 
 void stopMotor() {
-  accelerateMotor(0, false);  // zpomalení (down)
-  isRunning = false;
-  digitalWrite(CCW_RUN_PIN, LOW);
-  digitalWrite(CW_RUN_PIN, LOW);
-  analogWrite(ENABLE_PWM, 0);
-  delay(10);
+    accelerateMotor(0, false);  // zpomalení (down)
+    isRunning = false;
+    digitalWrite(CCW_RUN_PIN, LOW);
+    digitalWrite(CW_RUN_PIN, LOW);
+    analogWrite(ENABLE_PWM, 0);
+    delay(50);  // Pauza pro úplné zastavení motoru
 }
 
 
