@@ -26,13 +26,9 @@ Nové funkce pro rotátor LED 60
       "StEP" → enkodér → krátký stisk   - nastavení kroku ve stupních (def. 12 stupňů)
       "Int " → enkodér → krátký stisk   - nastavení intervalu v minutách (pauzy def. 2 min)
 	  	 
-   Displej:	 
-      střídá "SCAn" ↔ aktuální úhel
+   Displej:	 **`střídá "SCAn" ↔ aktuální úhel`**
 	  
-   LED Mapa:
-      modrá LED uržuje rozsah úhlů + animace radaru
+   LED Mapa: **` modrá LED uržuje rozsah úhlů + animace radaru `**
 
-   Zrušení funkce SCAn:	  
-  dlouhý stisk během nastavování → zrušení
-   CW / CCW / encoder → "End" → normální provoz
+   Zrušení funkce SCAn:	**`CW / CCW / encoder → "End" → normální provoz`**
 
