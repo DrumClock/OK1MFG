@@ -54,7 +54,7 @@
     Tlačítko M3/F  - mode 4 (náhodný 2 hod)
 
   Po dokončení testu je nastaven normální režim.
-  AutoTest je možné ukončit tlačítky **`CW / CCW → "End" → normální provoz`**
+  AutoTest je možné ukončit tlačítky CW / CCW → "End" → normální provoz
   
   
  Funkce SCAn:
