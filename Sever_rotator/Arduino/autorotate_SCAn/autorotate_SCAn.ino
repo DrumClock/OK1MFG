@@ -58,14 +58,16 @@
   
   
  Funkce SCAn:
-   dlouhý stisk encoderu 1,5s a více
+   Dlouhý stisk encoderu 1,5s a více =  nastavení + start od aktuální pozice
+    
     Nastavení:
-
       "An 1" → enkodér → krátký stisk   - nastavení prvního úhlu
       "An 2" → enkodér → krátký stisk   - nastavení druhého úhlu
       "StEP" → enkodér → krátký stisk   - nastavení kroku ve stupních (def. 12 stupňů)
       "Int " → enkodér → krátký stisk   - nastavení intervalu v minutách (pauzy def. 2 min)
-	  	 
+
+   Krátký stisk encoderu  → nastavení + start od aktuální pozice
+	 
    Displej:	 
       střídá "SCAn" ↔ aktuální úhel
 	  
@@ -73,8 +75,7 @@
       modrá LED uržuje rozsah úhlů + animace radaru
 
    Zrušení funkce SCAn:	  
-	 dlouhý stisk během nastavování → zrušení
-   CW / CCW / encoder → "End" → normální provoz
+	 PTT vstup,   CW / CCW / encoder → "End" → normální provoz
 
 */
 
@@ -125,6 +126,9 @@
 #define BUTTON_CAL_PIN A1
 #define BUTTON_SET_PIN A2
 #define BUTTON_FULL_PIN A3
+
+// PTT
+#define PTT_PIN A4  // PTT vstup - přerušení SCAN
 
 
 /*
@@ -237,18 +241,20 @@ int       testSeqCycle   = 1;   // aktuální číslo cyklu
 bool          scanRunning            = false;
 bool          scanWaitingForRotation = false;
 unsigned long scanPauseUntil         = 0;
-int           scanAngle1             = 0;    // první úhel
-int           scanAngle2             = 180;  // druhý úhel
+int           scanAngle1             = 135;    // první úhel
+int           scanAngle2             = 235;  // druhý úhel
 int           scanStep               = 2 * (int)round(DegPerLED);   // krok ve stupních 
 int           scanInterval           = 2;    // interval v minutách
 int           scanCurrentTarget      = 0;    // aktuální cíl
 bool          scanDirectionUp        = true; // true = k úhel2, false = k úhel1
 
 // --- globální proměnné pro animaci SCAN ---
+
 int  scanAnimPos     = 0;     // aktuální pozice animace
 bool scanAnimDir     = true;  // true = směr k ledA2
 unsigned long scanAnimTime = 0;
 const int SCAN_ANIM_STEP_MS = 50;  // rychlost pohybu LED v ms
+bool scanAnimReset = false;
 
 // #################### inicializace zařízení ###########################
 
@@ -409,6 +415,8 @@ void setup() {
   pinMode(BUTTON_SET_PIN, INPUT_PULLUP);
   pinMode(BUTTON_FULL_PIN, INPUT_PULLUP);
 
+  pinMode(PTT_PIN, INPUT_PULLUP);
+
   // test LED a Displeje při startu MCU
   test_LED_DISPLAY();
   
@@ -459,7 +467,11 @@ void loop() {
   if (testDurationSetup > 0) AutoTest();  // spustí se jen pokud bylo při startu stisknuto tlačítko
 
   // ############################# SCAN funkce #############################
-  SCAN();
+  scanRun();
+    // PTT → přerušení SCAN
+    if (scanRunning && digitalRead(PTT_PIN) == LOW) {
+      scanStop();
+    }
 
   // ############################# ovladaní rotatoru pomocí Tučňáka -Hamlib ##############################
   Hamlib_Tucnak();
@@ -507,26 +519,36 @@ void loop() {
     
     // --- SCAN: animace modré LED mezi koncovými úhly ---
     if (scanRunning) {
-      // --- krajní LED scanu svítí modře ---
       int ledA1 = round((float)scanAngle1 / 360.0 * NumPixels) % NumPixels;
       int ledA2 = round((float)scanAngle2 / 360.0 * NumPixels) % NumPixels;
 
-      // posun animace každých SCAN_ANIM_STEP_MS ms
-      if (millis() - scanAnimTime >= SCAN_ANIM_STEP_MS) {
-        scanAnimTime = millis();
-        if (scanAnimDir) {
-          scanAnimPos++;
-          if (scanAnimPos >= ledA2) scanAnimDir = false;
-        } else {
-          scanAnimPos--;
-          if (scanAnimPos <= ledA1) scanAnimDir = true;
-        }
-        scanAnimPos = constrain(scanAnimPos, ledA1, ledA2);
-      }
+      // krajní LED svítí vždy
+      strip.setPixelColor(ledA1, strip.Color(0, 0, 255));
+      strip.setPixelColor(ledA2, strip.Color(0, 0, 255));
 
-      strip.setPixelColor(ledA1,      strip.Color(0, 0, 255));  // modrá - krajní
-      strip.setPixelColor(ledA2,      strip.Color(0, 0, 255));  // modrá - krajní
-      strip.setPixelColor(scanAnimPos, strip.Color(0, 0, 255)); // modrá - animace
+      // animace jen když se netočí
+      if (AutoRotate == -1.0) {
+
+        // reset animace na pozici antény po skončení AutoRotate
+        if (scanAnimReset) {
+          scanAnimPos  = constrain(round((float)lastAngle / DegPerLED) % NumPixels, ledA1 + 1, ledA2 - 1);
+          scanAnimDir  = true;
+          scanAnimReset = false;
+        }
+
+        if (millis() - scanAnimTime >= SCAN_ANIM_STEP_MS) {
+          scanAnimTime = millis();
+          if (scanAnimDir) {
+            scanAnimPos++;
+            if (scanAnimPos >= ledA2 - 1) scanAnimDir = false;  // ← nezasahuje do ledA2
+          } else {
+            scanAnimPos--;
+            if (scanAnimPos <= ledA1 + 1) scanAnimDir = true;   // ← nezasahuje do ledA1
+          }
+          scanAnimPos = constrain(scanAnimPos, ledA1 + 1, ledA2 - 1);
+        }
+        strip.setPixelColor(scanAnimPos, strip.Color(0, 0, 255));
+      }
     }
 
     // Definice barev pro Neopixel LED
@@ -612,7 +634,7 @@ if (pos != lastPos) {
     unsigned long swPressStart = millis();
     while (digitalRead(PIN_SW) == LOW) {
       if (millis() - swPressStart > 1500) {
-        // dlouhý stisk → SCAN (jen bez aktivní AutoRotace a testu)
+        // dlouhý stisk → nastavení SCAN
         if (AutoRotate == -1.0 && !scanRunning && !testRunning) {
           while (digitalRead(PIN_SW) == LOW);
           scanStart();
@@ -621,12 +643,18 @@ if (pos != lastPos) {
       }
     }
 
-    // krátký stisk → normální AutoRotate (jen pokud neběží SCAN)
+    // krátký stisk
     if (!scanRunning) {
-      if (millis() - lastChangeTime < InactiveTime) {  // krátký stisk stále vyžaduje aktivitu
+      if (millis() - lastChangeTime < InactiveTime) {
+        // enkodér byl nedávno otočen → AutoRotate
         AutoRotate = (float)ledPos / NumPixels * 360.0;
         Auto_display();
         delay(500);
+      } else {
+        // enkodér nebyl otočen → restart SCAN
+        if (!testRunning && AutoRotate == -1.0 && scanAngle1 != scanAngle2) {
+          scanRestart();
+        }
       }
     }
   }
@@ -1181,7 +1209,10 @@ void Hamlib_Tucnak() {
             Hamlib_Azimuth = az;
             Hamlib_Elevation = el;
 
-            // nastavení Azimutu a elevace z progamu Tučňák (Alt+R)
+            // přerušení SCAN při příkazu z Hamlibu
+            if (scanRunning) scanStop();
+
+            // nastavení Azimutu a elevace z progamu Tučňák (Alt+R)            
             AutoRotate = Hamlib_Azimuth;
             lastElevation = Hamlib_Elevation;
 
@@ -1233,6 +1264,7 @@ void send_LastPosition() {
 //   4. Interval    (1–10 minut)
 // Průběh: kyvadlo úhel1 ↔ úhel2, krajní LED žlutě
 // Přerušení: CW, CCW nebo encoder
+
 
 void Scan_display() {
   // "SCAn"  S=0x6D  C=0x39  A=0x77  n=0x54
@@ -1322,8 +1354,12 @@ void scanStart() {
   scanInterval = val;
 
   // --- nastavení dokončeno → spusť scan ---
-  scanCurrentTarget      = scanAngle1;
-  scanDirectionUp        = (scanAngle1 <= scanAngle2);
+  // start od aktuální pozice antény
+  int startPos = (int)round(lastAngle / (int)round(DegPerLED)) * (int)round(DegPerLED);
+  startPos = constrain(startPos, scanAngle1, scanAngle2);
+
+  scanCurrentTarget      = startPos;
+  scanDirectionUp        = (startPos <= scanAngle2);
   scanRunning            = true;
   scanWaitingForRotation = false;
   scanPauseUntil         = 0;
@@ -1337,6 +1373,24 @@ void scanStart() {
   scanWaitingForRotation = true;
 }
 
+void scanRestart() {
+  int startPos = (int)round(lastAngle / (int)round(DegPerLED)) * (int)round(DegPerLED);
+  startPos = constrain(startPos, scanAngle1, scanAngle2);
+
+  scanCurrentTarget      = startPos;
+  scanDirectionUp        = (startPos <= scanAngle2);
+  scanRunning            = true;
+  scanWaitingForRotation = false;
+  scanPauseUntil         = 0;
+  scanAnimPos            = round((float)startPos / 360.0 * NumPixels) % NumPixels;
+
+  Scan_display();
+  delay(1000);
+
+  AutoRotate = (float)scanCurrentTarget;
+  ledPos     = round((float)scanCurrentTarget / 360.0 * NumPixels) % NumPixels;
+  scanWaitingForRotation = true;
+}
 
 void scanStop() {
   scanRunning = false;
@@ -1347,7 +1401,7 @@ void scanStop() {
 }
 
 
-void SCAN() {
+void scanRun() {
 
   if (!scanRunning) return;
 
@@ -1367,6 +1421,7 @@ void SCAN() {
     if (AutoRotate != -1.0) return;
 
     scanWaitingForRotation = false;
+    scanAnimReset = true; 
     scanPauseUntil = millis() + (unsigned long)scanInterval * 60000UL;   // ostry provoz - minuty
     //scanPauseUntil = millis() + 10000UL;   // pro testování - 10 sekund
     Scan_display();
@@ -1392,6 +1447,9 @@ void SCAN() {
   }
 
   // --- nastav AutoRotate ---
+  strip.setPixelColor(scanAnimPos, strip.Color(0, 0, 0));  // zhasni animační LED
+  strip.show();
+
   AutoRotate = (float)scanCurrentTarget;
   ledPos     = round((float)scanCurrentTarget / 360.0 * NumPixels) % NumPixels;
   scanWaitingForRotation = true;
