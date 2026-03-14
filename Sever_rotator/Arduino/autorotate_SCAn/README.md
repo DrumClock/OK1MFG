@@ -30,10 +30,14 @@ Pro jiný počet LED Neopixel změňit:
       "An 2" → enkodér → krátký stisk   - nastavení druhého úhlu
       "StEP" → enkodér → krátký stisk   - nastavení kroku ve stupních (def. 12 stupňů)
       "Int " → enkodér → krátký stisk   - nastavení intervalu v minutách (pauzy def. 2 min)
+
+   Krátký stisk encoderu   **` start od aktuální pozice	`**  
 	  	 
    Displej:	 **`střídá "SCAn" ↔ aktuální úhel`**
 	  
    LED Mapa: **` modrá LED uržuje rozsah úhlů + animace radaru `**
 
    Zrušení funkce SCAn:	**`CW / CCW / encoder → "End" → normální provoz`**
+
+   Přidán vstup "PTT" na pin A4 pro přerušení SCAn modu (aktivuje se LOW)
 
