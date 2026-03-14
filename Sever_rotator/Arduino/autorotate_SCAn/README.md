@@ -1,5 +1,10 @@
 Nové funkce pro rotátor LED 60
 
+Pro jiný počet LED Neopixel změňit:  
+  ```
+  // Neopixel ring LED
+  int NumPixels = 60;  // počet LED
+  ```
 
 # Funkce AutoTest:
  
