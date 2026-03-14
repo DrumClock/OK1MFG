@@ -17,7 +17,7 @@ Nové funkce pro rotátor LED 60
   
  # Funkce SCAn:
  
-   dlouhý stisk encoderu 1,5s a více
+   Dlouhý stisk encoderu 1,5s a více
    
    Nastavení:
    
