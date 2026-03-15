@@ -1,4 +1,4 @@
-# Nová funkce pro rotátor SEVER
+# Funkce "SCAn" pro rotátor SEVER
 
 Pro jiný počet LED Neopixel změňit:  
   ```
@@ -20,7 +20,7 @@ Pro jiný počet LED Neopixel změňit:
 
 -->  
   
- # Funkce SCAn:
+ # Popis funkce:
 
   Postupně otáčí kyvadlově anténou v daném rozmezí úhlů "An1" až"An2"  
    vždy o úhel daný parametrem "StEP" a intervalem "Int".
