@@ -40,6 +40,7 @@ Pro jiný počet LED Neopixel změňit:
    Zrušení funkce SCAn:	**`CW / CCW / encoder → "End" → normální provoz`**
 
    Přidán vstup "PTT" na pin A4 pro přerušení SCAn modu (aktivuje se LOW)
+   ![Scheme_frame](https://github.com/DrumClock/OK1MFG/blob/main/Sever_rotator/IMG_kalibrace.jpg)
 
    # Video funkce    
    [![SCAn](https://img.youtube.com/vi/xlwmkpu4vwc/0.jpg)](https://www.youtube.com/watch?v=xlwmkpu4vwc)
