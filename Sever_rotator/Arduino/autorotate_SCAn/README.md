@@ -41,8 +41,5 @@ Pro jiný počet LED Neopixel změňit:
 
    Přidán vstup "PTT" na pin A4 pro přerušení SCAn modu (aktivuje se LOW)
 
-   # Video funkce 
-   
-   <a href="https://www.youtube.com/watch?v=xlwmkpu4vwc" target="_blank">
-   <img src="https://img.youtube.com/vi/xlwmkpu4vwc/0.jpg" alt="SCAn">
-   </a>
+   # Video funkce    
+   [![SCAn](https://img.youtube.com/vi/xlwmkpu4vwc/0.jpg)](https://www.youtube.com/watch?v=xlwmkpu4vwc)
