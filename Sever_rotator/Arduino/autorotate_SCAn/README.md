@@ -22,7 +22,7 @@ Pro jiný počet LED Neopixel změňit:
   
  # Popis funkce:
 
-  Postupně otáčí kyvadlově anténou v daném rozmezí úhlů "An1" až"An2"  
+  Postupně otáčí kyvadlově anténou v daném rozmezí úhlů "An1" až "An2"  
    vždy o úhel daný parametrem "StEP" a intervalem "Int".
   
   Vhodné hlavně při CQ CONTEST.  
