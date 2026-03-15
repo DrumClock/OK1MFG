@@ -44,7 +44,8 @@ Pro jiný počet LED Neopixel změňit:
 	  
    LED Mapa: **` modrá LED zobrazuje rozsah úhlů + animace scanu `**  
 
-   Přidán vstup "PTT" na pin A4 pro přerušení SCAn modu (aktivuje se LOW)
+   # Vstup "PTT" 
+   Použit pin A4 pro přerušení (aktivuje se LOW)
    
    ![Scheme_frame](https://github.com/DrumClock/OK1MFG/blob/main/Sever_rotator/Arduino/autorotate_SCAn/Arduino_Sever_PTT.png)
 
