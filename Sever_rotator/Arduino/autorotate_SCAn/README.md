@@ -22,11 +22,12 @@ Pro jiný počet LED Neopixel změňit:
   
  # Funkce SCAn:
 
-  Postupně otáčí kyvadlově anténou v daném rozmezí úhlů "An1" až"An2" a
-  to vždy o úhel daný parametrem "StEP" a intervalem "Int"
+  Postupně otáčí kyvadlově anténou v daném rozmezí úhlů "An1" až"An2"  
+   vždy o úhel daný parametrem "StEP" a intervalem "Int"
   
-  Vhodné hlavně při CQ CONTEST. 
-  Přerušit sekvenci SCAn je možné stiskem: **`CW / CCW / encoderu nebo pomocí PTT`**. 
+  Vhodné hlavně při CQ CONTEST.  
+    Přerušit sekvenci SCAn je možné stiskem: **`CW / CCW / encoderu nebo pomocí PTT`**.   
+	
 
    Nastavení:
    
