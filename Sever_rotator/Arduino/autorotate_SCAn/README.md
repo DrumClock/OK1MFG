@@ -42,7 +42,7 @@ Pro jiný počet LED Neopixel změňit:
 	  	 
    Displej:	 **`střídá "SCAn" ↔ aktuální úhel`**
 	  
-   LED Mapa: **` modrá LED uržuje rozsah úhlů + animace radaru `**  
+   LED Mapa: **` modrá LED zobrazuje rozsah úhlů + animace scanu `**  
 
    Přidán vstup "PTT" na pin A4 pro přerušení SCAn modu (aktivuje se LOW)
    
