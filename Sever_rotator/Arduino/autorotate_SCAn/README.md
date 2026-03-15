@@ -1,4 +1,4 @@
-Nová funkce pro rotátor LED 60
+# Nová funkce pro rotátor SEVER
 
 Pro jiný počet LED Neopixel změňit:  
   ```
