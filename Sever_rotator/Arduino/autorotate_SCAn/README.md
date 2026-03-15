@@ -1,11 +1,11 @@
-Nové funkce pro rotátor LED 60
+Nová funkce pro rotátor LED 60
 
 Pro jiný počet LED Neopixel změňit:  
   ```
   // Neopixel ring LED
   int NumPixels = 60;  // počet LED
   ```
-
+<!-- 
 # Funkce AutoTest:
  
    Stisknou a držet při "zapnutí" dokud se neoběví na displeji "tESt"
@@ -18,7 +18,7 @@ Pro jiný počet LED Neopixel změňit:
   Po dokončení testu je nastaven normální režim.
   AutoTest je možné ukončit tlačítky **`CW / CCW → "End" → normální provoz`**
 
-  
+-->  
   
  # Funkce SCAn:
  
