@@ -21,10 +21,16 @@ Pro jiný počet LED Neopixel změňit:
 -->  
   
  # Funkce SCAn:
- 
-   Dlouhý stisk encoderu 1,5s a více
-   
+
+  Postupně otáčí kyvadlově anténou v daném rozmezí úhlů "An1" až"An2" a
+  to vždy o úhel daný parametrem "StEP" a intervalem "Int"
+  
+  Vhodné hlavně při CQ CONTEST. 
+  Přerušit sekvenci SCAn je možné stiskem: **`CW / CCW / encoderu nebo pomocí PTT`**. 
+
    Nastavení:
+   
+   Dlouhý stisk encoderu 1,5s a více
    
       "An 1" → enkodér → krátký stisk   - nastavení prvního úhlu
       "An 2" → enkodér → krátký stisk   - nastavení druhého úhlu
@@ -35,9 +41,7 @@ Pro jiný počet LED Neopixel změňit:
 	  	 
    Displej:	 **`střídá "SCAn" ↔ aktuální úhel`**
 	  
-   LED Mapa: **` modrá LED uržuje rozsah úhlů + animace radaru `**
-
-   Zrušení funkce SCAn:	**`CW / CCW / encoder → "End" → normální provoz`**
+   LED Mapa: **` modrá LED uržuje rozsah úhlů + animace radaru `**  
 
    Přidán vstup "PTT" na pin A4 pro přerušení SCAn modu (aktivuje se LOW)
    
