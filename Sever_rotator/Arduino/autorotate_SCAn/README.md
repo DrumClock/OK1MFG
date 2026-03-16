@@ -1,4 +1,4 @@
-# Funkce "SCAn" pro rotátor SEVER
+# Funkce "CQ Contest" pro rotátor SEVER
 
 Pro jiný počet LED Neopixel změňit:  
   ```
@@ -26,7 +26,7 @@ Pro jiný počet LED Neopixel změňit:
    vždy o úhel daný parametrem "StEP" a intervalem "Int".
   
   Vhodné hlavně při CQ CONTEST.  
-    Přerušit sekvenci SCAn je možné stiskem: **`CW, CCW, Encoderu nebo pomocí PTT vstupu`**.   
+    Přerušit sekvenci je možné stiskem: **`CW, CCW, Encoderu nebo pomocí PTT vstupu`**.   
 	
 
    Nastavení:
@@ -40,9 +40,9 @@ Pro jiný počet LED Neopixel změňit:
 
    Krátký stisk encoderu   **` start od aktuální pozice	`**  
 	  	 
-   Displej:	 **`střídá "SCAn" ↔ aktuální úhel`**
+   Displej:	 **`střídá "Cont" ↔ aktuální úhel`**
 	  
-   LED Mapa: **` modrá LED zobrazuje rozsah úhlů + animace scanu `**  
+   LED Mapa: **` modrá LED zobrazuje rozsah úhlů + animace rozsahu `**  
 
    # Vstup "PTT" 
    Použit pin A4 pro přerušení (aktivuje se LOW)
