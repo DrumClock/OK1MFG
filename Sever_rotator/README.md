@@ -10,7 +10,7 @@
  - zobrazení arimutu pomocí LED na krukové mapě (Neopixel 60 LED)
  - nastavení AUTOROTACE encoderem KY-040
  - kalibrace snímače a uložení do EEPROM (max. 3 rotátory)
- - funkce "CQ Contest" : https://github.com/DrumClock/OK1MFG/tree/main/Sever_rotator/Arduino/autorotate_SCAn
+ - funkce "CQ Contest" : https://github.com/DrumClock/OK1MFG/tree/main/Sever_rotator/Arduino/autorotate_Contest
 
 # Ovládání
 
