@@ -47,7 +47,7 @@ Pro jiný počet LED Neopixel změňit:
    # Vstup "PTT" 
    Použit pin A4 pro přerušení (aktivuje se LOW)
    
-   ![Scheme_frame](https://github.com/DrumClock/OK1MFG/blob/main/Sever_rotator/Arduino/autorotate_SCAn/Arduino_Sever_PTT.png)
+   ![Scheme_frame](https://github.com/DrumClock/OK1MFG/blob/main/Sever_rotator/Arduino/autorotate_Contest/Arduino_Sever_PTT.png)
 
    # Video funkce    
    [![SCAn](https://img.youtube.com/vi/xlwmkpu4vwc/0.jpg)](https://www.youtube.com/watch?v=xlwmkpu4vwc)
