@@ -1,5 +1,5 @@
 /*
- ###############  VERZE - 22.3.2026  #####################
+ ###############  VERZE - 27.3.2026  #####################
 
  - Ovládání motoru rotátoru pomocí H-můstku 
  - Snímání azimutu pomocí potenciometru (napěťový dělič)
@@ -1369,7 +1369,14 @@ void scanStart() {
 
   Scan_display();
   delay(1500);
+  
+  // pokud anténa není v rozsahu → přesuň na nejbližší krajní úhel
+  if (lastAngle < scanAngle1 || lastAngle > scanAngle2) {
+    scanCurrentTarget = (abs(lastAngle - scanAngle1) < abs(lastAngle - scanAngle2))
+                        ? scanAngle1 : scanAngle2;
+  }
 
+  
   // první krok ihned
   AutoRotate = (float)scanCurrentTarget;
   ledPos     = round((float)scanCurrentTarget / 360.0 * NumPixels) % NumPixels;
@@ -1389,7 +1396,12 @@ void scanRestart() {
 
   Scan_display();
   delay(1000);
-
+ // pokud anténa není v rozsahu → přesuň na nejbližší krajní úhel
+  if (lastAngle < scanAngle1 || lastAngle > scanAngle2) {
+    scanCurrentTarget = (abs(lastAngle - scanAngle1) < abs(lastAngle - scanAngle2))
+                        ? scanAngle1 : scanAngle2;
+  }
+  
   AutoRotate = (float)scanCurrentTarget;
   ledPos     = round((float)scanCurrentTarget / 360.0 * NumPixels) % NumPixels;
   scanWaitingForRotation = true;
