@@ -358,10 +358,6 @@ bool movementAllowed(bool movingCW, int absPos) {
   return true;
   }
 
-// --- END-stopy: varování na displeji + jednorázové pípnutí ---
-// Pípne pouze jednou při prvním volání, dokud není příznak resetován.
-// Reset příznaku: stop_AutoRotate() nebo stopMotor().
-
 
 // --- Buzzer: N × pípnutí (aktivní LOW) ---
 bool endstopBeepDone = false;
@@ -373,6 +369,9 @@ void beep(int count, int onMs = 150, int offMs = 150) {
   }
 }
 
+
+// --- END-stopy: varování na displeji + beeper ---
+// beeper pouze jednou při prvním volání, dokud není "endstopBeepDone" resetován.
 
 void showEndstopWarning() {
   if (!endstopBeepDone) {    
