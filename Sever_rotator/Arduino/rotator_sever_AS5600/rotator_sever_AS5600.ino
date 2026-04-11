@@ -15,13 +15,12 @@
  
  -------------------------------------------------------
  Volba snímače - tlačítky při normálním provozu (ukládá se do EEPROM):
-   M1 (krátký stisk) = rot1  - Potenciometr, profil 0
-   M2 (krátký stisk) = rot2  - Potenciometr, profil 1
+   M1 (krátký stisk) = pot1  - Potenciometr, profil 0
+   M2 (krátký stisk) = pot2  - Potenciometr, profil 1
    M3 (krátký stisk) = AS5600 analog (0-5V → 0-360°)
 
-   Kalibrace C/S/F  pro rot1 a rot2 a AS5600 
-
- Změna směru KY-040 Rotary Encoderu(jen při startu):
+  
+ Změna směru KY-040 Rotary Encoderu (jen při startu):
    Držet tlačítka M1+M2 než se na displeji zobrazí "Enc" + "rEV"  
 
  ------------------------------------------------------
@@ -57,7 +56,7 @@
      M2/S - nastavení endStopCW    fyzickým otočením antény (CW/CCW) → krátký stisk M2/S = ulož
      M3/F - nastavení endStopCCW   fyzickým otočením antény (CW/CCW) → krátký stisk M3/F = ulož + restart MCU
 
- Kalibrace potenciometru (jen rot1/rot2) - tlačítka M1/C, M2/S, M3/F:
+ Kalibrace potenciometru (jen pot1/pot2) - tlačítka M1/C, M2/S, M3/F:
    Dlouhý stisk = vstup/výstup z kalibrace (výstup = restart MCU)
      M1/C - přepíná kalibrační úhel (0-360°)
      M2/S - uloží napětí pro aktuální úhel → "SEtc" → další úhel
@@ -65,7 +64,7 @@
    Po 5 min nečinnosti se kalibrace ukončí automaticky (bez restartu)
 
  --------------------------------------------------------
- Funkce AutoTest:
+ Funkce AutoTest (jen při startu):
    Stisknout a držet při zapnutí dokud se neobjeví "tESt"
      M1 = mode 1 (sekvence úhlů)
      M2 = mode 2 (náhodný 60 min)
@@ -167,7 +166,7 @@ int endStopCW  =  400;   // max abs. pozice CW  (°)
 int endStopCCW =  -40;   // min abs. pozice CCW (°)
 
 // --- EEPROM adresy ---
-const int EEPROM_PROFILE      =  0;   // 1 bajt: profil (0=rot1, 1=rot2, 2=AS5600)
+const int EEPROM_PROFILE      =  0;   // 1 bajt: profil (0=pot1, 1=pot2, 2=AS5600)
 const int EEPROM_NORTH_OFFSET = 73;   // 2 bajty: north offset AS5600
 const int EEPROM_TURNS        = 75;   // 2 bajty: počet otáček turns
 const int EEPROM_ENDSTOP_CW   = 77;   // 2 bajty: endStopCW  AS5600
@@ -240,7 +239,7 @@ unsigned long lastActivityTime = 0;
 bool calibrationMode = false;
 int  angleIndex      = 0;
 
-// --- Profily: 0=rot1/POT, 1=rot2/POT, 2=AS5600 ---
+// --- Profily: 0=pot1/POT, 1=pot2/POT, 2=AS5600 ---
 int currentProfile    = 0;
 const int MaxProfiles = 3;
 
@@ -1129,12 +1128,12 @@ void saveMaxVoltage() {
 // --- Tlačítka M1 / M2 / M3 ---
 //
 // Krátký stisk mimo kalibraci:
-//   M1 = rot1 (POT, profil 0)   → "rot1"
-//   M2 = rot2 (POT, profil 1)   → "rot2"
+//   M1 = pot1 (POT, profil 0)   → "pot1"
+//   M2 = pot2 (POT, profil 1)   → "pot2"
 //   M3 = AS5600 (profil 2)      → "AS  "
 //
 // Dlouhý stisk = vstup do kalibrace:
-//   POT (rot1/rot2):
+//   POT (pot1/pot2):
 //     Libovolné M tlačítko (dlouhý) = vstup/výstup z kalibrace POT
 //     V kalibračním režimu: M1=přepni úhel, M2=ulož napětí, M3=ulož MAX+restart
 //   AS5600:
@@ -1291,13 +1290,13 @@ void checkButtons() {
       switch (pressedButton) {
         case 1:
           currentProfile = 0; SENSOR_AS5600 = false;
-          loadProfileFromEEPROM(0);   // zobrazí "rot1" + uloží profil
-          Serial.println(F("==> rot1: Potenciometr"));
+          loadProfileFromEEPROM(0);   // zobrazí "pot1" + uloží profil
+          Serial.println(F("==> pot1: Potenciometr"));
           break;
         case 2:
           currentProfile = 1; SENSOR_AS5600 = false;
-          loadProfileFromEEPROM(1);   // zobrazí "rot2" + uloží profil
-          Serial.println(F("==> rot2: Potenciometr"));
+          loadProfileFromEEPROM(1);   // zobrazí "pot2" + uloží profil
+          Serial.println(F("==> pot2: Potenciometr"));
           break;
         case 3:
           currentProfile = 2; SENSOR_AS5600 = true; MaxAngle = 360.0;
