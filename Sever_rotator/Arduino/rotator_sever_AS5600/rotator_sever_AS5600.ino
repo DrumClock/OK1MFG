@@ -1,5 +1,5 @@
 /*
- ###############  VERZE - 10.4.2026  #####################
+ ###############  VERZE - 11.4.2026  #####################
 
  - Ovládání motoru rotátoru pomocí H-můstku
  - Snímání azimutu pomocí potenciometru (napěťový dělič) nebo AS5600 (analog 0-5V)
