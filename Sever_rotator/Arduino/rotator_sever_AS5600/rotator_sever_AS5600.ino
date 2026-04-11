@@ -579,9 +579,7 @@ void setup() {
   digitalWrite(CW_RUN_PIN,    LOW);
   digitalWrite(CCW_RUN_PIN,   LOW);
 
-  
-  beepMorse("R");   // beeper zahraje ".-." test a ready
-
+    
   test_LED_DISPLAY();
 
   // Načtení směru enkodéru
@@ -604,6 +602,8 @@ void setup() {
 
   if (currentProfile == 2) {
     // --- AS5600 ---
+     uint8_t segAS[] = { 0x40, 0x77, 0x6d, 0x40 };  // "-AS-"
+     display.setSegments(segAS, 4, 0); delay(1500);
     SENSOR_AS5600 = true;
     MaxAngle      = 360.0;
     loadNorthOffset();
@@ -646,8 +646,12 @@ void setup() {
     Serial.print(F("endStopCW: "));  Serial.println(endStopCW);
     Serial.print(F("endStopCCW: ")); Serial.println(endStopCCW);
   }
+
+   beepMorse("R");   // beeper zahraje ".-." test a ready
+
 }
 
+ 
 
 // ############### loop   ############################
 
