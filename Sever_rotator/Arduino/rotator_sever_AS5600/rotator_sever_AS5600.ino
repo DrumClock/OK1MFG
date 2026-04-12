@@ -1,5 +1,7 @@
 /*
- ###############  VERZE - 11.4.2026  #####################
+ ######################################################################
+ ##################  VERZE - 12.4.2026  ###############################
+ ######################################################################
 
  - Ovládání motoru rotátoru pomocí H-můstku
  - Snímání azimutu pomocí potenciometru (napěťový dělič) nebo AS5600 (analog 0-5V)
@@ -14,6 +16,7 @@
  - Nastavení a kalibrace se ukládá do EEPROM
  
  -------------------------------------------------------
+
  Volba snímače - tlačítky při normálním provozu (ukládá se do EEPROM):
    M1 (krátký stisk) = pot1  - Potenciometr, profil 0
    M2 (krátký stisk) = pot2  - Potenciometr, profil 1
@@ -40,6 +43,7 @@
    Pokud motor běží a azimut se do 3s nemění → zastav (ochrana při poruše čidla).
 
  -------------------------------------------------------
+
  EEPROM rozložení:
    [0]    = currentProfile (1 bajt): 0=Pot1/POT, 1=Pot2/POT, 2=AS5600
    [1..72]= profily POT    (2 profily × 24 bajtů + 1 rezerva)
@@ -48,6 +52,7 @@
    [77]   = endStopCW      AS5600 (int, 2 bajty)
    [79]   = endStopCCW     AS5600 (int, 2 bajty)
    [81]   = směr encoderu  KY-040 (int, 1 bajt)
+
  -------------------------------------------------------
 
  Kalibrace AS5600 - tlačítka M1/C, M2/S, M3/F:
@@ -82,8 +87,9 @@
    Zrušení: PTT vstup, CW / CCW / encoder → "End" → normální provoz
 */
 
-
+// ########################################################
 // ############### inicializace knihoven ##################
+// ########################################################
 
 #include <Adafruit_NeoPixel.h>
 #include <TM1637Display.h>
@@ -91,8 +97,9 @@
 #include <EEPROM.h>
 #include <math.h>
 
-
+// ########################################################
 // ############### zapojení  - Pinout    ##################
+// ########################################################
 
 /*
 D0 (RX)
@@ -104,7 +111,7 @@ D1 (TX)
 // KY-040 Rotary Encoder
 #define PIN_CLK 2   // pin podporuje "interrupt"
 #define PIN_DT  3   // pin podporuje "interrupt"
-#define PIN_SW  4
+#define PIN_SW  4   // encoder SW
 
 // Displej TM1637
 #define DIO 5
@@ -152,8 +159,9 @@ if ( analogRead(xxx_PIN) < A7_THRESHOLD) {
 	
 */
 
-
+// ########################################################
 // ############### definice proměnných   ##################
+// ########################################################
 
 // --- Typ snímače (načítá se z EEPROM podle profilu, mění se tlačítky M1/M2/M3) ---
 // false = Potenciometr (kalibrace + interpolace)
@@ -282,15 +290,160 @@ unsigned long scanAnimTime = 0;
 const int SCAN_ANIM_STEP_MS = 50;
 bool scanAnimReset = false;
 
-
+// ########################################################
 // ############### inicializace zařízení ##################
+// ########################################################
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(48, PIN_LED, NEO_GRB + NEO_KHZ800);
 TM1637Display display(CLK, DIO);
 Encoder enc(PIN_CLK, PIN_DT);
 
 
-// ############### funkce které musí být před setup a loop ###############
+// ########################################################
+// ##### funkce které musí být před setup a loop ##########
+// ########################################################
+
+
+/* ------ tabulka zpráv na displeji ---------------
+ volání:   displayStatus("klic", 800)
+*/
+
+struct SegMsg {
+  const char*  key;
+  uint8_t      segs[4];
+};
+
+// Přidej sem nové zprávy podle potřeby. Klíč je malými písmeny,   
+const SegMsg segMessages[] = {
+  { "off",   { 0x5c, 0x71, 0x71, 0x00 } },  // "oFF "
+  { "set",   { 0x6d, 0x79, 0x78, 0x00 } },  // "SEt "
+  { "save",  { 0x6d, 0x77, 0x3e, 0x79 } },  // "SAVE"
+  { "end",   { 0x00, 0x79, 0x54, 0x5E } },  // " End"
+  { "stop",  { 0x6d, 0x78, 0x5c, 0x73 } },  // "StoP"
+  { "err",   { 0x79, 0x50, 0x50, 0x00 } },  // "Err "
+  { "sen",   { 0x00, 0x6d, 0x79, 0x54 } },  // " SEn"
+  { "test",  { 0x78, 0x79, 0x6D, 0x78 } },  // "tESt"
+  { "rot",   { 0x00, 0x50, 0x5C, 0x78 } },  // " rot"
+  { "enc",   { 0x00, 0x79, 0x54, 0x58 } },  // " Enc"
+  { "rev",   { 0x50, 0x79, 0x3e, 0x00 } },  // "rEV "
+  { "ptt",   { 0x73, 0x78, 0x78, 0x00 } },  // "Ptt "
+  { "cas",   { 0x58, 0x00, 0x77, 0x6d } },  // "c AS"
+  { "abor",  { 0x77, 0x7c, 0x5c, 0x50 } },  // "Abor"
+  { "endc",  { 0x79, 0x54, 0x5e, 0x58 } },  // "Endc"
+  { "setc",  { 0x6d, 0x79, 0x78, 0x58 } },  // "SEtc"
+  { "full",  { 0x71, 0x1c, 0x38, 0x38 } },  // "FuLL"
+  { "nort",  { 0x54, 0x5c, 0x50, 0x78 } },  // "nort"
+  { "ecw",   { 0x79, 0x00, 0x39, 0x1c } },  // "E Cu" (end CW)
+  { "eccw",  { 0x79, 0x39, 0x39, 0x1c } },  // "ECCv" (end CCW)
+  { "-as-",  { 0x40, 0x77, 0x6d, 0x40 } },  // "-AS-"
+  { "an1",   { 0x77, 0x54, 0x00, 0x06 } },  // "An 1"
+  { "an2",   { 0x77, 0x54, 0x00, 0x5B } },  // "An 2"
+  { "step",  { 0x6D, 0x78, 0x79, 0x73 } },  // "StEP"
+  { "int",   { 0x06, 0x54, 0x78, 0x00 } },  // "Int "
+  { "---",   {  0x40, 0x40, 0x40, 0x40 } },  // "----" (Neznámý klíč )
+};
+
+// Zobrazí zprávu podle klíče a počká delayMs ms, pak smaže displej.
+void displayStatus(const char* key, uint16_t delayMs = 800) {
+  const int count = sizeof(segMessages) / sizeof(segMessages[0]);
+  for (int i = 0; i < count; i++) {
+    if (strcmp(segMessages[i].key, key) == 0) {
+      display.setSegments(segMessages[i].segs, 4, 0);
+      delay(delayMs);
+      display.clear();
+      return;
+    }
+  }
+  // fallback: neznámý klíč → rekurzivně zobraz "----"
+  displayStatus("---", delayMs);
+}
+
+
+/* ----------- scrollovací zprávy na displeji ----------------
+Volání:
+msgScroll("as");         // výchozí rychlost 250 ms/znak
+msgScroll("as", 150);    // rychlejší
+*/
+
+struct ScrollMsg {
+  const char* key;
+  const uint8_t* data;
+  uint8_t len;
+};
+
+// Data scrollovacích zpráv 
+const uint8_t scrollAS[] = {
+  0x00, 0x00, 0x00, 0x00,  // mezera (nájezd)
+  0x77, 0x54, 0x77, 0x38,  // AnAL
+  0x5c, 0x3d, 0x00, 0x6d,  // oG S
+  0x79, 0x54, 0x6d, 0x5c,  // EnSo
+  0x50, 0x00, 0x77, 0x6d,  // r AS
+  0x40, 0x6d, 0x7d, 0x3f,  // -560
+  0x3f, 0x00, 0x00, 0x00,  // 0
+  0x00, 0x00, 0x00, 0x00   // mezera (odjezd)
+};
+
+// sem přidávej další scrollovací zprávy...
+// const uint8_t scrollBoot[] = { ... };
+
+const ScrollMsg scrollMessages[] = {
+   { "as",   scrollAS,   sizeof(scrollAS)   }, 
+// { "boot", scrollBoot, sizeof(scrollBoot) },
+};
+
+
+void msgScroll(const char* key, uint16_t stepMs = 250) {
+  const int count = sizeof(scrollMessages) / sizeof(scrollMessages[0]);
+  for (int i = 0; i < count; i++) {
+    if (strcmp(scrollMessages[i].key, key) == 0) {
+      const uint8_t* d   = scrollMessages[i].data;
+      uint8_t        len = scrollMessages[i].len;
+      uint8_t window[4];
+      for (int pos = 0; pos < len - 3; pos++) {
+        for (int j = 0; j < 4; j++) window[j] = d[pos + j];
+        display.setSegments(window, 4, 0);
+        delay(stepMs);
+      }
+      return;
+    }
+  }
+}
+
+
+// -------------- readButtons  ----------------------
+
+//
+// Vrátí aktuální stav M1/M2/M3 jako bitmask (aktivní LOW):
+//   bit 0 = M1 (BUTTON_CAL_PIN)
+//   bit 1 = M2 (BUTTON_SET_PIN)
+//   bit 2 = M3 (BUTTON_FULL_PIN)
+//
+// Kombinace:
+//   0b000 = 0  žádné
+//   0b001 = 1  M1
+//   0b010 = 2  M2
+//   0b011 = 3  M1+M2
+//   0b100 = 4  M3
+//   0b101 = 5  M1+M3
+//   0b110 = 6  M2+M3
+//   0b111 = 7  M1+M2+M3
+
+// Pojmenované konstanty pro čitelnost v kódu
+const uint8_t BTN_NONE     = 0b000;
+const uint8_t BTN_M1       = 0b001;
+const uint8_t BTN_M2       = 0b010;
+const uint8_t BTN_M1_M2    = 0b011;
+const uint8_t BTN_M3       = 0b100;
+const uint8_t BTN_M1_M3    = 0b101;
+const uint8_t BTN_M2_M3    = 0b110;
+const uint8_t BTN_M1_M2_M3 = 0b111;
+
+uint8_t readButtons() {
+  return (!digitalRead(BUTTON_CAL_PIN)  ? BTN_M1 : 0) |
+         (!digitalRead(BUTTON_SET_PIN)  ? BTN_M2 : 0) |
+         (!digitalRead(BUTTON_FULL_PIN) ? BTN_M3 : 0);
+}
+
 
 // --- Interpolace / Extrapolace dráhy potenciometru ---
 float voltageToAngleInterpolated(float voltage) {
@@ -373,6 +526,7 @@ void beep(int count, int onMs = 150, int offMs = 150) {
 // --- END-stopy: varování na displeji + beeper ---
 // beeper pouze jednou při prvním volání, dokud není "endstopBeepDone" resetován.
 
+
 void showEndstopWarning() {
   if (!endstopBeepDone) {    
     beepMorse("K");   // beeper zahraje "-.-" jako konec
@@ -431,12 +585,8 @@ void calibrateNorth() {
   Serial.println(F("=== Kalibrace severu (AS5600) ==="));
   Serial.println(F("Drz enkoder... pust = ulozit sever"));
 
-  uint8_t segOff[]  = { 0x5c, 0x71, 0x71, 0x00 };  // "oFF "
-  uint8_t segSet[]  = { 0x6d, 0x79, 0x78, 0x00 };  // "SEt "
-  uint8_t segSave[] = { 0x6d, 0x77, 0x3e, 0x79 };  // "SAVE"
-
-  display.setSegments(segOff, 4, 0); delay(800); display.clear();
-  display.setSegments(segSet, 4, 0); delay(800); display.clear();
+  displayStatus("off", 800);
+  displayStatus("set", 800);
 
   while (digitalRead(PIN_SW) == LOW) {
     display.showNumberDec(map(analogRead(ANALOG_PIN), 0, 1023, 0, 359), false);
@@ -448,7 +598,7 @@ void calibrateNorth() {
   lastAz = (int)readSensorAngle();
   saveTurns();
 
-  display.setSegments(segSave, 4, 0); delay(1000); display.clear();
+  displayStatus("save", 1000);
   Serial.print(F("North offset (deg): ")); Serial.println(northOffset);
   Serial.println(F("Turns reset na 0."));
 }
@@ -544,9 +694,9 @@ void test_LED_DISPLAY(int interval = 1) {
 }
 
 
-
-
-// ############### setup  ############################
+// ########################################################
+// #################### setup  ############################
+// ########################################################
 
 void setup() {
   Serial.begin(9600);
@@ -583,25 +733,12 @@ void setup() {
   // Načtení směru enkodéru
   ENCODER_REVERSED = EEPROM.read(EEPROM_ENC_REVERSED) == 1;
 
-  // Přepnutí směru enkodéru: držet M1+M2 při startu
-  if (digitalRead(BUTTON_CAL_PIN) == LOW && digitalRead(BUTTON_SET_PIN) == LOW) {
-    ENCODER_REVERSED = !ENCODER_REVERSED;
-    EEPROM.update(EEPROM_ENC_REVERSED, ENCODER_REVERSED ? 1 : 0);
-
-   // zobraz potvrzení
-    uint8_t segEnc[] = { 0x00, 0x79, 0x54, 0x58 };  // " Enc "
-    uint8_t segRev[] = { 0x50, 0x79, 0x3e, 0x00 };  // "rEV "
-    display.setSegments(segEnc, 4, 0); delay(1000);
-    display.setSegments(segRev, 4, 0); delay(1000);  }
-
-
   // Načtení profilu z EEPROM → určí typ snímače
   loadCurrentProfile();   // currentProfile = 0 / 1 / 2
 
   if (currentProfile == 2) {
     // --- AS5600 ---
-     uint8_t segAS[] = { 0x40, 0x77, 0x6d, 0x40 };  // "-AS-"
-     display.setSegments(segAS, 4, 0); delay(1500);
+    displayStatus("-as-", 1500);
     SENSOR_AS5600 = true;
     MaxAngle      = 360.0;
     loadNorthOffset();
@@ -611,32 +748,18 @@ void setup() {
     Serial.println(F("=== SENSOR: AS5600 analog ==="));
     Serial.print(F("North offset: ")); Serial.println(northOffset);
     Serial.print(F("Turns: "));        Serial.println(turns);
-    // Kalibrace severu - jen při startu, jen AS5600
-    if (digitalRead(PIN_SW) == LOW) {
-      calibrateNorth();
-    }
   } else {
     // --- Potenciometr ---
     SENSOR_AS5600 = false;
     loadProfileFromEEPROM(currentProfile);
     Serial.println(F("=== SENSOR: Potenciometr ==="));
-    // Kalibrace severu se pro POT NEPROVÁDÍ
   }
 
   lastPos        = 0;
   lastChangeTime = millis();
 
-  // Detekce tlačítek pro AutoTest (stisknout při startu)
-  if      (digitalRead(BUTTON_CAL_PIN)  == LOW) testDurationSetup = 1;
-  else if (digitalRead(BUTTON_SET_PIN)  == LOW) testDurationSetup = 2;
-  else if (digitalRead(BUTTON_FULL_PIN) == LOW) testDurationSetup = 3;
-
-  if (testDurationSetup > 0) {
-    uint8_t sT[] = { 0x78, 0x79, 0x6D, 0x78 }; display.setSegments(sT, 4, 0); delay(1500);
-    uint8_t sR[] = { 0x00, 0x50, 0x5C, 0x78 }; display.setSegments(sR, 4, 0); delay(1500);
-    display.showNumberDec((testDurationSetup == 1) ? testSequence[0] : (testDurationSetup == 2) ? 60 : 120, false);
-    delay(1500);
-  }
+  // Detekce tlačítek při startu: encoder reverse, kalibrace severu, AutoTest
+  checkButtons("setup");
 
   Serial.println(F("=== Rotator start ==="));
   if (SENSOR_AS5600) {
@@ -645,13 +768,14 @@ void setup() {
     Serial.print(F("endStopCCW: ")); Serial.println(endStopCCW);
   }
 
-   beepMorse("R");   // beeper zahraje ".-." test a ready
-
+  beepMorse("R");   // beeper zahraje ".-." test a ready
+  
 }
 
  
-
-// ############### loop   ############################
+// ########################################################
+// #################### loop   ############################
+// ########################################################
 
 void loop() {
 
@@ -661,8 +785,7 @@ void loop() {
   // --- Contest ---
   scanRun();
   if (scanRunning && analogRead(PTT_PIN) < A6_THRESHOLD) {
-    uint8_t sP[] = { 0x73, 0x78, 0x78, 0x00 };  // "Ptt"
-    display.setSegments(sP, 4, 0); delay(1500);
+    displayStatus("ptt", 1500);
     scanStop();
   }
 
@@ -670,7 +793,7 @@ void loop() {
   Hamlib_Tucnak();
 
   // --- Tlačítka M1/M2/M3: volba snímače + kalibrace ---
-  checkButtons();
+  checkButtons("loop");
 
   // --- Čtení azimutu ---
   float angle = readSensorAngle();
@@ -763,7 +886,7 @@ void loop() {
 
     if (displayMode) {
       if (testDurationSetup > 0 && testRunning) {
-        uint8_t sT[] = { 0x78, 0x79, 0x6D, 0x78 }; display.setSegments(sT, 4, 0);  // "tESt"
+        uint8_t sT[] = { 0x78, 0x79, 0x6D, 0x78 }; display.setSegments(sT, 4, 0);  // "tESt" (live, bez delay)
       } else if (scanRunning) {
         Scan_display();
       } else {
@@ -892,8 +1015,8 @@ void loop() {
     stop_AutoRotate();
     if (testRunning) {
       testRunning = false; testDurationSetup = 0;
-      uint8_t sT[] = { 0x78, 0x79, 0x6D, 0x78 }; display.setSegments(sT, 4, 0); delay(1500);
-      uint8_t sE[] = { 0x00, 0x79, 0x54, 0x5E }; display.setSegments(sE, 4, 0); delay(1500);
+      displayStatus("test", 1500);
+      displayStatus("end",  1500);
     }
   }
 
@@ -928,8 +1051,9 @@ void loop() {
   strip.show();
 }
 
-
-// ############### ostatní funkce ####################
+// ########################################################
+// ################ ostatní funkce void  ##################
+// ########################################################
 
 // --- Watchdog zaseknutého snímače ---
 // Volá se z loop() s aktuálním surovým azimutem ze senzoru.
@@ -962,22 +1086,21 @@ void watchdog(float angle) {
   if (millis() - watchdogStart >= WatchdogTimeout) {
     stopMotor();
     stop_AutoRotate();
-    scanStop();
+    if (scanRunning) {scanStop(); }
     testDurationSetup = 0;
     watchdogActive = false;
 
     Serial.println(F("!!! WATCHDOG: azimut se nemeni, motor zastaven !!!"));
 
     beepMorse("?"); // beeper zahraje "?" jako chyba
-
-    uint8_t segErr[] = { 0x79, 0x50, 0x50, 0x00 };  // "Err"
-    uint8_t segSEn[] = { 0x00, 0x6d, 0x79, 0x54 };  // "SEn"
-    display.setSegments(segSEn, 4, 0); delay(500);
-    display.setSegments(segErr, 4, 0); delay(1000);
-    display.setSegments(segSEn, 4, 0); delay(500);
-    display.setSegments(segErr, 4, 0); delay(1000);
-    display.setSegments(segSEn, 4, 0); delay(500);
-    display.setSegments(segErr, 4, 0); delay(2000);
+    
+    displayStatus("stop", 1500);
+    displayStatus("sen",   500);
+    displayStatus("err",  1000);
+    displayStatus("sen",   500);
+    displayStatus("err",  1000);
+    displayStatus("sen",   500);
+    displayStatus("err",  2000);
   }
 }
 
@@ -1124,67 +1247,103 @@ void saveMaxVoltage() {
   Serial.print(F("Ulozeno voltageAtMax = ")); Serial.println(v);
 }
 
-// --- Tlačítka M1 / M2 / M3 ---
+// ########################################################
+// ############### checkButtons  ##########################
+// ########################################################
 //
-// Krátký stisk mimo kalibraci:
-//   M1 = pot1 (POT, profil 0)   → "pot1"
-//   M2 = pot2 (POT, profil 1)   → "pot2"
-//   M3 = AS5600 (profil 2)      → "AS  "
+// mode = "setup"  → volá se jednou ze setup()
+//                   čte okamžitý stav tlačítek (bez čekání na uvolnění)
+//                   řeší: encoder reverse, AutoTest, kalibrace severu
 //
-// Dlouhý stisk = vstup do kalibrace:
-//   POT (pot1/pot2):
-//     Libovolné M tlačítko (dlouhý) = vstup/výstup z kalibrace POT
-//     V kalibračním režimu: M1=přepni úhel, M2=ulož napětí, M3=ulož MAX+restart
-//   AS5600:
-//     M1 (dlouhý) = nastavení northOffset (otočit CW/CCW, krátký M1 = ulož)
-//     M2 (dlouhý) = nastavení endStopCW   (otočit CW/CCW, krátký M2 = ulož)
-//     M3 (dlouhý) = nastavení endStopCCW  (otočit CW/CCW, krátký M3 = ulož + restart)
-//     Dlouhý stisk libovolného M = zrušit aktuální krok kalibrace
+// mode = "loop"   → volá se z loop() každý průchod
+//                   sleduje krátký / dlouhý stisk, volbu senzoru, kalibraci
 //
-void checkButtons() {
-  static unsigned long pressStart   = 0;
-  static bool          buttonPressed = false;
-  static uint8_t       pressedButton = 0;
+// Stav M1/M2/M3 čte přes readButtons() jako bitmask:
+//   BTN_M1=0b001  BTN_M2=0b010  BTN_M3=0b100  a jejich kombinace
+//
+void checkButtons(const char* mode) {
 
-  bool bCal  = !digitalRead(BUTTON_CAL_PIN);
-  bool bSet  = !digitalRead(BUTTON_SET_PIN);
-  bool bFull = !digitalRead(BUTTON_FULL_PIN);
+  // ======================================================
+  // SETUP mód — čte se jednou při startu, bez čekání
+  // ======================================================
+  if (strcmp(mode, "setup") == 0) {
+    uint8_t btn = readButtons();
 
-  if ((bCal || bSet || bFull) && !buttonPressed) {
-    buttonPressed = true;
-    pressStart    = millis();
-    if      (bCal  && !bSet  && !bFull) pressedButton = 1;
-    else if (bSet  && !bCal  && !bFull) pressedButton = 2;
-    else if (bFull && !bCal  && !bSet)  pressedButton = 3;
-    else                                pressedButton = 0;
+    // BTN_M1_M2 (M1+M2) = otočení směru enkodéru
+    if (btn == BTN_M1_M2) {
+      ENCODER_REVERSED = !ENCODER_REVERSED;
+      EEPROM.update(EEPROM_ENC_REVERSED, ENCODER_REVERSED ? 1 : 0);
+      displayStatus("enc", 1000);
+      displayStatus("rev", 1000);
+      Serial.print(F("Encoder reversed: ")); Serial.println(ENCODER_REVERSED);
+    }
+
+    // Enkodér SW = kalibrace severu (jen AS5600)
+    if (digitalRead(PIN_SW) == LOW && SENSOR_AS5600) {
+      calibrateNorth();
+    }
+
+    // AutoTest: BTN_M1=mode1, BTN_M2=mode2 (60 min), BTN_M3=mode3 (120 min)
+    if      (btn == BTN_M1) testDurationSetup = 1;
+    else if (btn == BTN_M2) testDurationSetup = 2;
+    else if (btn == BTN_M3) testDurationSetup = 3;
+
+    if (testDurationSetup > 0) {
+      displayStatus("test", 1500);
+      displayStatus("rot",  1500);
+      display.showNumberDec(
+        (testDurationSetup == 1) ? testSequence[0] :
+        (testDurationSetup == 2) ? 60 : 120, false);
+      delay(1500);
+    }
+
+    return;
   }
 
-  if (!bCal && !bSet && !bFull && buttonPressed) {
+  // ======================================================
+  // LOOP mód — sleduje stisky za normálního provozu
+  // ======================================================
+  //
+  // Krátký stisk mimo kalibraci:
+  //   M1 = pot1 (POT, profil 0)
+  //   M2 = pot2 (POT, profil 1)
+  //   M3 = AS5600 analog
+  //
+  // Dlouhý stisk = vstup do kalibrace:
+  //   POT:    libovolné M = vstup/výstup z kalibrace
+  //           M1=přepni úhel, M2=ulož napětí, M3=ulož MAX+restart
+  //   AS5600: M1=northOffset, M2=endStopCW, M3=endStopCCW+restart
+  //           dlouhý stisk libovolného M = zrušit krok kalibrace
+
+  static unsigned long pressStart   = 0;
+  static bool          buttonPressed = false;
+  static uint8_t       pressedButton = 0;   // 1/2/3 = první stisknuté tlačítko
+
+  uint8_t btn = readButtons();
+  bool anyPressed = (btn != BTN_NONE);
+
+  // --- Zaznamenání začátku stisku ---
+  if (anyPressed && !buttonPressed) {
+    buttonPressed = true;
+    pressStart    = millis();
+    if      (btn & BTN_M1) pressedButton = 1;
+    else if (btn & BTN_M2) pressedButton = 2;
+    else if (btn & BTN_M3) pressedButton = 3;
+  }
+
+  // --- Zpracování po uvolnění ---
+  if (!anyPressed && buttonPressed) {
     buttonPressed = false;
     unsigned long dur = millis() - pressStart;
     uint8_t d[4];
 
-    uint8_t segCAS[] = { 0x58, 0x00, 0x77, 0x6d };  // "c AS"
-	uint8_t segAbt[] = { 0x77, 0x7c, 0x5c, 0x50 };  // "Abor" (abort)
- 
     // --- Dlouhý stisk: kalibrace ---
     if (dur >= LONG_PRESS_DURATION) {
       if (SENSOR_AS5600) {
-        // AS5600: každé tlačítko vstupuje do svého kalibračního kroku
-        //   M1/C (dlouhý) = nastavení northOffset
-        //   M2/S (dlouhý) = nastavení endStopCW
-        //   M3/F (dlouhý) = nastavení endStopCCW + restart
-
         if (pressedButton == 1) {
-          // --- M1: northOffset ---          calibrationModeAS = true;
-          
-          display.setSegments(segCAS, 4, 0); delay(1000);
-
-          uint8_t segNor[] = { 0x54, 0x5c, 0x50, 0x78 };  // "nort "
-          // Pro northOffset: otočit anténu na sever, krátký M1 = ulož
-          // calibAS_setPhysical vrací azimut (0-359 s aktuálním northOffset),
-          // ale northOffset = raw hodnota senzoru při az=0
-          // Proto northOffset přepočítáme: newOffset = (starý northOffset + vrácený az) % 360
+          calibrationModeAS = true;
+          displayStatus("cas", 1000);
+          uint8_t segNor[] = { 0x54, 0x5c, 0x50, 0x78 };  // "nort"
           int result = calibAS_setPhysical(segNor, 1);
           if (result != CALIB_CANCEL) {
             int newOffset = (northOffset + result) % 360;
@@ -1192,58 +1351,49 @@ void checkButtons() {
             turns  = 0;
             lastAz = (int)readSensorAngle();
             saveTurns();
-            uint8_t sSave[] = { 0x6d, 0x77, 0x3e, 0x79 };  // "SAVE"
-            display.setSegments(sSave, 4, 0); delay(1000);
+            displayStatus("save", 1000);
             Serial.print(F("AS5600 northOffset=")); Serial.println(northOffset);
           } else {
-            uint8_t segAbt[] = { 0x77, 0x7c, 0x5c, 0x50 };  // "Abor" (abort)
-            display.setSegments(segAbt, 4, 0); delay(800);
+            displayStatus("abor", 800);
           }
           calibrationModeAS = false;
 
         } else if (pressedButton == 2) {
-          // --- M2: endStopCW ---
           calibrationModeAS = true;
-          display.setSegments(segCAS, 4, 0); delay(1000);
-
+          displayStatus("cas", 1000);
           uint8_t sECW[] = { 0x79, 0x00, 0x39, 0x1c };  // "E Cu" (end CW)
-          // vrací azimut (0-359°) v poloze max CW → endStopCW = az + 360
-          Serial.print(F("  [endStopCW] turns pred kalibraci=")); Serial.println(turns);
+          Serial.print(F("  [endStopCW] turns=")); Serial.println(turns);
           int result = calibAS_setPhysical(sECW, 2);
           if (result != CALIB_CANCEL) {
-            endStopCW = result + 360;   // anténa je za severem CW → vždy +360
+            endStopCW = result + 360;
             saveEndStops();
-            uint8_t sSave[] = { 0x6d, 0x77, 0x3e, 0x79 };  // "SAVE"
-            display.setSegments(sSave, 4, 0); delay(1000);
+            displayStatus("save", 1000);
             Serial.print(F("AS5600 endStopCW=")); Serial.println(endStopCW);
           } else {
-             display.setSegments(segAbt, 4, 0); delay(800);
+            displayStatus("abor", 800);
           }
           calibrationModeAS = false;
 
         } else if (pressedButton == 3) {
-          // --- M3: endStopCCW + restart ---
           calibrationModeAS = true;
-          display.setSegments(segCAS, 4, 0); delay(1000);
-
+          displayStatus("cas", 1000);
           uint8_t sECC[] = { 0x79, 0x39, 0x39, 0x1c };  // "ECCv" (end CCW)
-          // vrací azimut (0-359°) v poloze max CCW → endStopCCW = az - 360
-          Serial.print(F("  [endStopCCW] turns pred kalibraci=")); Serial.println(turns);
+          Serial.print(F("  [endStopCCW] turns=")); Serial.println(turns);
           int result = calibAS_setPhysical(sECC, 3);
           if (result != CALIB_CANCEL) {
-            endStopCCW = result - 360;   // anténa je za severem CCW → vždy -360
+            endStopCCW = result - 360;
             saveEndStops();
             Serial.print(F("AS5600 endStopCCW=")); Serial.println(endStopCCW);
-            uint8_t sEnd[] = { 0x00, 0x79, 0x54, 0x5E };  // "End"
-            display.setSegments(sEnd, 4, 0); delay(1000);
-            asm volatile("  jmp 0");   // restart pro čistý start s novými hodnotami
-          } else {            
-            display.setSegments(segAbt, 4, 0); delay(800);
+            displayStatus("end", 1000);
+            asm volatile("  jmp 0");
+          } else {
+            displayStatus("abor", 800);
           }
           calibrationModeAS = false;
         }
+
       } else {
-        // POT: kalibrace potenciometru
+        // POT: vstup / výstup z kalibrace
         if (!calibrationMode) {
           calibrationMode = true;
           d[0] = 0x39; d[1] = 0x77; d[2] = 0x38;
@@ -1253,8 +1403,7 @@ void checkButtons() {
           Calibrate_display();
         } else {
           calibrationMode = false;
-          d[0] = 0x79; d[1] = 0x54; d[2] = 0x5e; d[3] = 0x58;  // "Endc"
-          display.setSegments(d, 4, 0); delay(1500);
+          displayStatus("endc", 1500);
           asm volatile("  jmp 0");
         }
         lastActivityTime = millis();
@@ -1269,15 +1418,13 @@ void checkButtons() {
           break;
         case 2:
           saveAngleVoltage(angleIndex);
-          d[0] = 0x6d; d[1] = 0x79; d[2] = 0x78; d[3] = 0x58;  // "SEtc"
-          display.setSegments(d, 4, 0); delay(1500);
+          displayStatus("setc", 1500);
           angleIndex = (angleIndex + 1) % NumCalibrationPoints;
           Calibrate_display();
           break;
         case 3:
           saveMaxVoltage();
-          d[0] = 0x71; d[1] = 0x1c; d[2] = 0x38; d[3] = 0x38;  // "FuLL"
-          display.setSegments(d, 4, 0); delay(1500);
+          displayStatus("full", 1500);
           asm volatile("  jmp 0");
           break;
       }
@@ -1289,47 +1436,42 @@ void checkButtons() {
       switch (pressedButton) {
         case 1:
           currentProfile = 0; SENSOR_AS5600 = false;
-          loadProfileFromEEPROM(0);   // zobrazí "pot1" + uloží profil
+          loadProfileFromEEPROM(0);
           Serial.println(F("==> pot1: Potenciometr"));
           break;
         case 2:
           currentProfile = 1; SENSOR_AS5600 = false;
-          loadProfileFromEEPROM(1);   // zobrazí "pot2" + uloží profil
+          loadProfileFromEEPROM(1);
           Serial.println(F("==> pot2: Potenciometr"));
           break;
         case 3:
           currentProfile = 2; SENSOR_AS5600 = true; MaxAngle = 360.0;
           saveCurrentProfile();
-          /*
-          { uint8_t segAS[] = { 0x40, 0x77, 0x6d, 0x40 };  // "-AS-"
-            display.setSegments(segAS, 4, 0); delay(1500); }
-          */
 
-// ----------- „scrollovací“ text -------------------
+
+     // ----------- scrollovaci text -------------------
+       msgScroll("as");    // výchozí rychlost 250 ms/znak,  msgScroll("as", 150);    rychlejší
+
+/*
 uint8_t segAnimFull[] = {
-  0x00, 0x00, 0x00, 0x00,  // mezera (nájezd zprava)
+  0x00, 0x00, 0x00, 0x00,  // mezera (najezd zprava)
   0x77, 0x54, 0x77, 0x38,  // AnAL
   0x5c, 0x3d, 0x00, 0x6d,  // oG S
   0x79, 0x54, 0x6d, 0x5c,  // EnSo
-  0x50, 0x00, 0x77, 0x6d,  // r AS 
+  0x50, 0x00, 0x77, 0x6d,  // r AS
   0x40, 0x6d, 0x7d, 0x3f,  // -560
   0x3f, 0x00, 0x00, 0x00,  // 0
-  0x00,0x00, 0x00, 0x00   // mezera (odjezd doleva)
+  0x00, 0x00, 0x00, 0x00   // mezera (odjezd doleva)
 };
-
 const int len = sizeof(segAnimFull);
 uint8_t window[4];
-
-  for (int i = 0; i < len - 3; i++) {
-    // posun okna o 4 znacích
-    for (int j = 0; j < 4; j++) {
-      window[j] = segAnimFull[i + j];
-    }
-    display.setSegments(window, 4, 0);
-    delay(250);
-  }
-
-// ----------- „scrollovací“ text -------------------
+for (int i = 0; i < len - 3; i++) {
+  for (int j = 0; j < 4; j++) window[j] = segAnimFull[i + j];
+  display.setSegments(window, 4, 0);
+  delay(250);
+}
+// ----------- scrollovaci text -------------------
+*/
 
           Serial.println(F("==> AS5600 analog"));
           break;
@@ -1338,11 +1480,10 @@ uint8_t window[4];
     pressedButton = 0;
   }
 
-  // Auto-ukončení kalibrace po 5 min nečinnosti
+  // Auto-ukonceni kalibrace po 5 min necinnosti
   if (calibrationMode && (millis() - lastActivityTime > IDLE_TIMEOUT)) {
     calibrationMode = false;
-    uint8_t d[] = { 0x79, 0x54, 0x5e, 0x58 };  // "Endc"
-    display.setSegments(d, 4, 0); delay(1500);
+    displayStatus("endc", 1500);
     Angle_display(lastAngle);
   }
 }
@@ -1434,19 +1575,19 @@ int scanSetValue(int val, int minVal, int maxVal, int stepVal) {
 }
 
 void scanStart() {
-  uint8_t sA1[]   = { 0x77, 0x54, 0x00, 0x06 }; display.setSegments(sA1,   4, 0); delay(1000);
+  displayStatus("an1", 1000);
   int val = scanSetValue(scanAngle1, 0, 360, (int)round(DegPerLED));
   if (val < 0) return; scanAngle1 = val;
 
-  uint8_t sA2[]   = { 0x77, 0x54, 0x00, 0x5B }; display.setSegments(sA2,   4, 0); delay(1000);
+  displayStatus("an2", 1000);
   val = scanSetValue(scanAngle2, 0, 360, (int)round(DegPerLED));
   if (val < 0) return; scanAngle2 = val;
 
-  uint8_t sStep[] = { 0x6D, 0x78, 0x79, 0x73 }; display.setSegments(sStep, 4, 0); delay(1000);
+  displayStatus("step", 1000);
   val = scanSetValue(scanStep, (int)round(DegPerLED), 90, (int)round(DegPerLED));
   if (val < 0) return; scanStep = val;
 
-  uint8_t sInt[]  = { 0x06, 0x54, 0x78, 0x00 }; display.setSegments(sInt,  4, 0); delay(1000);
+  displayStatus("int", 1000);
   val = scanSetValue(scanInterval, 1, 10, 1);
   if (val < 0) return; scanInterval = val;
 
@@ -1478,8 +1619,7 @@ void scanRestart() {
 
 void scanStop() {
   scanRunning = false; stop_AutoRotate();
-  uint8_t d[] = { 0x6d, 0x78, 0x5c, 0x73 };  // "StoP"
-  display.setSegments(d, 4, 0); delay(1500);
+  displayStatus("stop", 1500);
 }
 
 void scanRun() {
@@ -1549,8 +1689,8 @@ void AutoTest() {
         testRunning = false; testDurationSetup = 0; stop_AutoRotate();
         Serial.print(F("  KONEC TESTU | Cyklu: ")); Serial.print(testSequence[0]);
         Serial.print(F(" | Celkem kroku: ")); Serial.println(testStepCount);
-        uint8_t sT[] = { 0x78, 0x79, 0x6D, 0x78 }; display.setSegments(sT, 4, 0); delay(1500);
-        uint8_t sE[] = { 0x00, 0x79, 0x54, 0x5E }; display.setSegments(sE, 4, 0); delay(1500);
+        displayStatus("test", 1500);
+        displayStatus("end",  1500);
         return;
       }
       testSeqCycle++; testSeqIndex = 1;
@@ -1567,8 +1707,8 @@ void AutoTest() {
     if (testRunning) {
       testRunning = false; testDurationSetup = 0; stop_AutoRotate();
       Serial.print(F("  KONEC TESTU | Celkem kroku: ")); Serial.println(testStepCount);
-      uint8_t sT[] = { 0x78, 0x79, 0x6D, 0x78 }; display.setSegments(sT, 4, 0); delay(1500);
-      uint8_t sE[] = { 0x00, 0x79, 0x54, 0x5E }; display.setSegments(sE, 4, 0); delay(1500);
+      displayStatus("test", 1500);
+      displayStatus("end",  1500);
     }
     return;
   }
