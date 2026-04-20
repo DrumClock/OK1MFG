@@ -1,6 +1,6 @@
 /*
  ######################################################################
- ##################  VERZE - 19.4.2026  ###############################
+ ##################  VERZE - 20.4.2026  ###############################
  ######################################################################
 
  - Ovládání motoru rotátoru pomocí H-můstku
@@ -21,7 +21,7 @@
  #########################  nastavení #################################
  ######################################################################
 
-  Krátký stisk je signalizovaný přehráním "." dlouhý poak ".."
+  Krátký stisk je signalizovaný přehráním "." dlouhý pak ".."
  
  ------------------------ Při startu  ---------------------------------
 
@@ -53,11 +53,11 @@
   Krátký stisk 
      M1/C - Změna směru KY-040 Rotary Encoderu → na displeji zobrazí "Enc" + "rEV"
      M2/S - Změna směru snímače AS5600  → na displeji zobrazí " Sen" + "rEV"
-     M3/F - reset MCU
+     M3/F - "rezerva"
 
  -------------------------------------------------------- 
 
- Funkce Contest:
+ Funkce "Contest":
    Dlouhý stisk encoderu 1,5s = nastavení + start od aktuální pozice
      "An 1" → enkodér → krátký stisk  = první úhel
      "An 2" → enkodér → krátký stisk  = druhý úhel
@@ -65,8 +65,13 @@
      "Int " → enkodér → krátký stisk  = interval v minutách
  
    Krátký stisk encoderu → restart od aktuální pozice
-  
    Zrušení: PTT vstup, CW / CCW / encoder → "End" → normální provoz
+
+ -------------------------------------------------------- 
+
+ Funkce "Restart":
+    Extra dlouhý stisk encoderu (>3s je signalizovaný přehráním "-")  →  reset MCU
+     
 
 
 ######################################################################
@@ -264,6 +269,7 @@ float gearRatio = 1.0;   // převodový poměr snímač→výstup (např. 2.5 = 
 const unsigned int SHORT_PRESS_DURATION = 500;   // ms
 const unsigned int LONG_PRESS_DURATION = 1500;   // ms
 unsigned long pressStartSetup = 0;   // čas stisku detekovaného v setup() odpočtu
+uint8_t      pressedSetup    = 0;   // které tlačítko: 0=SW, 1=M1, 2=M2, 3=M3
 
 // --- Hamlib / Tučňák ---
 int Hamlib_Azimuth   = 0;
@@ -317,7 +323,7 @@ Adafruit_FRAM_I2C fram;
 
 
 /* ------ tabulka zpráv na displeji ---------------
- volání:   displayStatus("klic", 800)
+ volání:   displayStatus("klic", 800);
 */
 
 struct SegMsg {
@@ -445,6 +451,9 @@ const uint8_t BTN_M3       = 0b100;
 const uint8_t BTN_M1_M3    = 0b101;
 const uint8_t BTN_M2_M3    = 0b110;
 const uint8_t BTN_M1_M2_M3 = 0b111;
+
+// Forward deklarace — nutná protože setup() volá checkButtons před jeho definicí
+void checkButtons(const char* mode, unsigned long dur = 0);
 
 uint8_t readButtons() {
   return (!digitalRead(BUTTON_CAL_PIN)  ? BTN_M1 : 0) |
@@ -995,30 +1004,62 @@ void setup() {
   //msgScroll("as"); // scrolovací text: Analog Senzor AS-5600
   displayStatus("set", 800);
 
-  // --- Odpočet 10s: čeká jen na fyzický stisk, nic nevyhodnocuje ---
-  // Jakmile je detekován stisk (libovolné tlačítko nebo SW), skočí na do_check.
-  // Po 10s bez stisku přeskočí checkButtons a jde rovnou na setup_end.
+  // --- Odpočet 10s: čeká na stisk, měří délku, signalizuje buzzerem ---
+  // Po uvolnění předá délku stisku a které tlačítko do checkButtons("setup", dur).
+  // Po 10s bez stisku → normální start.
+  {
+  unsigned long setupDur = 0;
+  bool pressed  = false;
+  bool beeped1  = false;
+  bool beeped2  = false;
+
   for (int countdown = 10; countdown >= 1; countdown--) {
     display.showNumberDec(countdown, false);
     unsigned long tickStart = millis();
     while (millis() - tickStart < 1000UL) {
-      if (digitalRead(PIN_SW)          == LOW ||
-          digitalRead(BUTTON_CAL_PIN)  == LOW ||
-          digitalRead(BUTTON_SET_PIN)  == LOW ||
-          digitalRead(BUTTON_FULL_PIN) == LOW) {
-        pressStartSetup = millis();   // zaznamenej čas stisku
-        goto do_check;
+
+      if (!pressed &&
+          (digitalRead(PIN_SW)          == LOW ||
+           digitalRead(BUTTON_CAL_PIN)  == LOW ||
+           digitalRead(BUTTON_SET_PIN)  == LOW ||
+           digitalRead(BUTTON_FULL_PIN) == LOW)) {
+        pressed         = true;
+        pressStartSetup = millis();
+        pressedSetup    = (digitalRead(PIN_SW)         == LOW) ? 0 :
+                          (digitalRead(BUTTON_CAL_PIN) == LOW) ? 1 :
+                          (digitalRead(BUTTON_SET_PIN) == LOW) ? 2 : 3;
+      }
+
+      if (pressed) {
+        setupDur = millis() - pressStartSetup;
+
+        if (!beeped1 && setupDur >= SHORT_PRESS_DURATION) {
+          beepMorse(".");   // uběhla doba krátkého stisku
+          beeped1 = true;
+        }
+        if (!beeped2 && setupDur >= LONG_PRESS_DURATION) {
+          beepMorse("..");   // uběhla doba dlouhého stisku
+          beeped2 = true;
+        }
+
+        bool released = (digitalRead(PIN_SW)          == HIGH &&
+                         digitalRead(BUTTON_CAL_PIN)  == HIGH &&
+                         digitalRead(BUTTON_SET_PIN)  == HIGH &&
+                         digitalRead(BUTTON_FULL_PIN) == HIGH);
+        if (released) {
+          goto do_check;
+        }
       }
       delay(10);
     }
   }
-  display.clear();
   goto setup_end;
 
   do_check:
     display.clear();
-    checkButtons("setup");   // tlačítko stále drženo → rozliší krátký/dlouhý + aktivuje funkce
-  setup_end:
+    checkButtons("setup", setupDur);
+  setup_end:;
+}
 
   beepMorse(".-.");   // beeper zahraje "R" jako ready
 
@@ -1168,17 +1209,35 @@ void loop() {
   // Stisk enkodéru
   if (digitalRead(PIN_SW) == LOW) {
     unsigned long t0 = millis();
+    bool longBeep  = false;
+    bool extraBeep = false;
+    // čekej na uvolnění, průběžně signalizuj
     while (digitalRead(PIN_SW) == LOW) {
-      if (millis() - t0 > 1500) {
-        // Dlouhý stisk → nastavení + spuštění scanu
-        while (digitalRead(PIN_SW) == LOW);
-        if (!testRunning) {
-          stop_AutoRotate();
-          scanRunning = false;
-          scanStart();
-        }
-        return;
+      if (!longBeep && millis() - t0 > 1500) {
+        beepMorse("..");   // signál dlouhého stisku
+        longBeep = true;
       }
+      if (!extraBeep && millis() - t0 > 3000) {
+        beepMorse("-");    // signál extra dlouhého stisku = reset
+        extraBeep = true;
+      }
+    }
+    unsigned long dur = millis() - t0;
+
+    if (dur > 3000) {
+      // Extra dlouhý stisk → reset MCU
+      displayStatus("---", 1000);
+      asm volatile("  jmp 0");
+      return;
+    }
+    if (dur > 1500) {
+      // Dlouhý stisk → nastavení + spuštění scanu
+      if (!testRunning) {
+        stop_AutoRotate();
+        scanRunning = false;
+        scanStart();
+      }
+      return;
     }
     // Krátký stisk
     if (!testRunning) {
@@ -1233,7 +1292,7 @@ void loop() {
   bool ccwPressed = digitalRead(CCW_BUTTON) == LOW;
   unsigned long now = millis();
 
-  if (AutoRotate != -1 && (cwPressed || ccwPressed)) {
+  if ((cwPressed || ccwPressed) && (AutoRotate != -1 || testRunning)) {
     lastOutputChange = now;
     stop_AutoRotate();
     if (testRunning) {
@@ -1427,7 +1486,7 @@ void stopMotor() {
 // Stav M1/M2/M3 čte přes readButtons() jako bitmask:
 // BTN_M1=0b001  BTN_M2=0b010  BTN_M3=0b100  a jejich kombinace
 //
-void checkButtons(const char* mode) {
+void checkButtons(const char* mode, unsigned long dur) {
 
   // ======================================================
   // SETUP mód — okamžité čtení tlačítek (bez čekání)
@@ -1444,44 +1503,27 @@ void checkButtons(const char* mode) {
   //
   if (strcmp(mode, "setup") == 0) {
 
-    // --- SW encoder ---
-    // pressStartSetup = čas stisku změřený už v FOR smyčce → správná délka stisku
-    if (digitalRead(PIN_SW) == LOW) {
-      bool longBeepSW = false;
-      while (digitalRead(PIN_SW) == LOW) {
-        if (!longBeepSW && millis() - pressStartSetup >= LONG_PRESS_DURATION) {
-          beepMorse("..");
-          longBeepSW = true;
-        }
-      }
-      unsigned long dur = millis() - pressStartSetup;
+    // dur         = délka stisku naměřená v FOR smyčce
+    // pressedSetup = které tlačítko bylo stisknuto (0=SW, 1=M1, 2=M2, 3=M3)
+    // buzzer už pípnul ve FOR smyčce — tady jen spustíme funkci
+
+    if (pressedSetup == 0) {
+      // --- SW encoder ---
       if (dur >= LONG_PRESS_DURATION) {
         // dlouhý stisk SW → rezerva
+        displayStatus("---", 1000); // neobsazeno
       } else {
-        beepMorse(".");        // cokoliv kratší než LONG_PRESS_DURATION = krátký stisk
         calibrateNorth();
       }
-    }
-
-    // --- Tlačítka M1 / M2 / M3 ---
-    uint8_t btn = readButtons();
-    if (btn != BTN_NONE) {
-      uint8_t which   = (btn & BTN_M1) ? 1 : (btn & BTN_M2) ? 2 : 3;
-      bool longBeepM  = false;
-      while (readButtons() != BTN_NONE) {
-        if (!longBeepM && millis() - pressStartSetup >= LONG_PRESS_DURATION) {
-          beepMorse("..");
-          longBeepM = true;
-        }
-      }
-      unsigned long dur = millis() - pressStartSetup;
+    } else {
+      // --- Tlačítka M1 / M2 / M3 ---
       if (dur >= LONG_PRESS_DURATION) {
         // dlouhý stisk Mx → rezerva
+        displayStatus("---", 1000); // neobsazeno
       } else {
-        beepMorse(".");        // cokoliv kratší než LONG_PRESS_DURATION = krátký stisk
-        if      (which == 1) testDurationSetup = 1;
-        else if (which == 2) testDurationSetup = 2;
-        else if (which == 3) testDurationSetup = 3;
+        if      (pressedSetup == 1) testDurationSetup = 1;
+        else if (pressedSetup == 2) testDurationSetup = 2;
+        else if (pressedSetup == 3) testDurationSetup = 3;
       }
     }
 
@@ -1641,9 +1683,10 @@ void checkButtons(const char* mode) {
       //Serial.print(F("Sensor reversed: ")); Serial.println(SENSOR_REVERSED);
     }
     
-    // M3 = reset MCU
+    // M3 = 
     if (pressedButton == 3) {
-       asm volatile("  jmp 0");
+       // rezerva pro funkci M3
+       displayStatus("---", 1000);       
       }
     }
     pressedButton = 0;
