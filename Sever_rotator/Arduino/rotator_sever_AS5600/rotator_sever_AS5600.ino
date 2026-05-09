@@ -974,12 +974,14 @@ void setup() {
   loadSensorAccum();
   loadEndStops();
 
-  // Inicializace lastRawSensorDeg bez akumulace (jen čtení raw)
+  // Synchronizace sensorAccum při startu podle skutečné pozice snímače + uložených turns
   {
     int rawADC = analogRead(ANALOG_PIN);
-    lastRawSensorDeg = SENSOR_REVERSED
+    float realRaw = SENSOR_REVERSED
       ? (float)map(rawADC, 0, 1023, 359, 0)
       : (float)map(rawADC, 0, 1023, 0, 359);
+    sensorAccum    = (float)(turns * 360) + realRaw;
+    lastRawSensorDeg = realRaw;
   }
   lastAz = (int)readSensorAngle();
 
@@ -1472,6 +1474,7 @@ void stopMotor() {
   digitalWrite(CW_RUN_PIN,  LOW);
   analogWrite(ENABLE_PWM, 0);
   delay(50);
+  saveSensorAccumForce();   // uložit přesnou pozici při každém zastavení motoru
 }
 
 
