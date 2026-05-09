@@ -1,6 +1,6 @@
 /*
  ######################################################################
- ##################  VERZE - 20.4.2026  ###############################
+ ##################  VERZE - 9.5.2026  ###############################
  ######################################################################
 
  - Ovládání motoru rotátoru pomocí H-můstku
@@ -43,8 +43,8 @@
  Kalibrace AS5600 - tlačítka M1/C, M2/S, M3/F:
    Dlouhý stisk = vstup do kalibrace
      M1/C - nastavení GearRatio   encoderem (X.XXX) → krátký stisk M1/C = ulož
-     M2/S - nastavení endStopCW   fyzickým otočením antény → krátký stisk M2/S = ulož + turns=0
-     M3/F - nastavení endStopCCW  fyzickým otočením antény → krátký stisk M3/F = ulož + turns=0 + restart MCU
+     M2/S - nastavení endStopCW   fyzickým otočením antény → krátký stisk M2/S = ulož pozici ( azimut + 360 )
+     M3/F - nastavení endStopCCW  fyzickým otočením antény → krátký stisk M3/F = ulož pozici ( azimut - 360 ) 
  
    Dlouhý stisk libovolného M = zrušit krok kalibrace
 
@@ -65,7 +65,8 @@
      "Int " → enkodér → krátký stisk  = interval v minutách
  
    Krátký stisk encoderu → restart od aktuální pozice
-   Zrušení: PTT vstup, CW / CCW / encoder → "End" → normální provoz
+   Pozastavení: PTT vstup → "Ptt" → pozastaví pauzu (odpočet neběží dokud je PTT aktivní)
+   Zrušení: CW / CCW / encoder → "End" → normální provoz
 
  -------------------------------------------------------- 
 
@@ -96,8 +97,6 @@ FRAM rozložení (Adafruit MB85RC256V, I2C, addr 0x50):
   -------------------------------------------------------------------
  
  END-stopy (softwarové, absolutní pozice):
-   Používají absolutní pozici = azimut + (turns × 360).
-   turns sleduje přechody přes sever (CW = turns++, CCW = turns--).
    endStopCW  = max dovolená abs. pozice pro CW  (např. +400°)
    endStopCCW = min dovolená abs. pozice pro CCW (např. -40°)
 
@@ -651,6 +650,7 @@ void loadSensorAccum() {
 }
 
 void saveSensorAccum() {
+  if (calibrationModeAS) return;   // během kalibrace neukládat
   static float lastSaved = -99999.0;
   if (fabs(sensorAccum - lastSaved) >= minMov) {
     lastSaved = sensorAccum;
@@ -667,11 +667,16 @@ void saveSensorAccumForce() {
 
 // --- Turns: uložení/načtení ---
 void saveTurns() {
+  if (calibrationModeAS) return;   // během kalibrace neukládat
   static int lastSaved = -999;
   if (turns != lastSaved) {
     lastSaved = turns;
     framWrite(FRAM_TURNS, turns);
   }
+}
+
+void saveTurnsForce() {
+  framWrite(FRAM_TURNS, turns);
 }
 
 void loadTurns() {
@@ -852,11 +857,8 @@ int calibAS_setPhysical(const uint8_t label[4], uint8_t confirmBtn) {
   delay(1000);
 
   while (true) {
-    // --- Živý azimut (s northOffset, stejně jako readSensorAngle()) ---
-    int rawDeg = map(analogRead(ANALOG_PIN), 0, 1023, 0, 359);
-    int az     = rawDeg - northOffset;
-    if (az <    0) az += 360;
-    if (az >= 360) az -= 360;
+    // --- Živý azimut: voláme readSensorAngle() aby se průběžně aktualizoval sensorAccum ---
+    int az = (int)readSensorAngle();
 
     // --- Neopixel: živá pozice antény (oranžová tečka) ---
     strip.clear();
@@ -887,11 +889,8 @@ int calibAS_setPhysical(const uint8_t label[4], uint8_t confirmBtn) {
       }
       if (which == confirmBtn) {
         if (isRunning) stopMotor();
-        // Čerstvé čtení po zastavení motoru
-        rawDeg = map(analogRead(ANALOG_PIN), 0, 1023, 0, 359);
-        az     = rawDeg - northOffset;
-        if (az <    0) az += 360;
-        if (az >= 360) az -= 360;
+        // Čerstvé čtení po zastavení motoru (aktualizuje i sensorAccum)
+        az = (int)readSensorAngle();
         strip.clear(); strip.show();
         return az;
       }
@@ -1078,10 +1077,7 @@ void loop() {
 
   // --- Contest ---
   scanRun();
-  if (scanRunning && analogRead(PTT_PIN) < A6_THRESHOLD) {
-    displayStatus("ptt", 1500);
-    scanStop();
-  }
+  // PTT → logika pozastavení je v scanRun(), zobrazení "Ptt" obstarává display cyklus
 
   // --- Hamlib / Tučňák ---
   Hamlib_Tucnak();
@@ -1164,26 +1160,32 @@ void loop() {
       strip.setPixelColor(ledIndex, strip.Color(0, 255, 0));
     }
 
-    // Přepínání displeje
-    if ((AutoRotate != -1 || scanRunning) && millis() - changeUpdateTime >= changeInterval) {
-      changeUpdateTime = millis();
-      displayMode = !displayMode;
-    }
-
-    if (displayMode) {
-      if (testDurationSetup > 0 && testRunning) {
-        uint8_t sT[] = { 0x78, 0x79, 0x6D, 0x78 }; display.setSegments(sT, 4, 0);  // "tESt" (live, bez delay)
-      } else if (scanRunning) {
-        Scan_display();
-      } else {
-        Auto_display();
-      }
-    } else if (AutoRotate != -1) {
-      Angle_display(AutoRotate);
-    } else if (scanRunning) {
-      Angle_display(scanCurrentTarget);
+    // PTT má prioritu → zobraz jen "Ptt"
+    if (scanRunning && analogRead(PTT_PIN) < A6_THRESHOLD) {
+      static const uint8_t segPtt[] = { 0x73, 0x78, 0x78, 0x00 };
+      display.setSegments(segPtt, 4, 0);
     } else {
-      Angle_display(lastAngle);
+      // Přepínání displeje: Cont ↔ azimut
+      if ((AutoRotate != -1 || scanRunning) && millis() - changeUpdateTime >= changeInterval) {
+        changeUpdateTime = millis();
+        displayMode = !displayMode;
+      }
+
+      if (displayMode) {
+        if (testDurationSetup > 0 && testRunning) {
+          uint8_t sT[] = { 0x78, 0x79, 0x6D, 0x78 }; display.setSegments(sT, 4, 0);  // "tESt"
+        } else if (scanRunning) {
+          Scan_display();
+        } else {
+          Auto_display();
+        }
+      } else if (AutoRotate != -1) {
+        Angle_display(AutoRotate);
+      } else if (scanRunning) {
+        Angle_display(scanCurrentTarget);
+      } else {
+        Angle_display(lastAngle);
+      }
     }
   }
 
@@ -1613,23 +1615,13 @@ void checkButtons(const char* mode, unsigned long dur) {
         } else if (pressedButton == 2) {
           calibrationModeAS = true;
           displayStatus("cal", 1000);
-          uint8_t sECW[] = { 0x79, 0x00, 0x39, 0x1c };  // "E Cu" (end CW)
-          Serial.print(F("  [endStopCW] turns=")); Serial.println(turns);
+          uint8_t sECW[] = { 0x79, 0x00, 0x39, 0x1c };  // "E Cu" (end CW)          
           int result = calibAS_setPhysical(sECW, 2);
           if (result != CALIB_CANCEL) {
-            endStopCW = result + 360;
-            turns       = 0;
-            sensorAccum = (float)northOffset;   // reset akumulace na nulovou pozici
-            lastRawSensorDeg = SENSOR_REVERSED
-              ? (float)map(analogRead(ANALOG_PIN), 0, 1023, 359, 0)
-              : (float)map(analogRead(ANALOG_PIN), 0, 1023, 0, 359);
-            lastAz = (int)readSensorAngle();
-            saveTurns();
-            saveSensorAccumForce();
+            endStopCW = (int)readSensorAngle() + 360;
             saveEndStops();
             displayStatus("set", 1000);
             Serial.print(F("AS5600 endStopCW=")); Serial.println(endStopCW);
-            Serial.println(F("Turns reset na 0."));
           } else {
             displayStatus("abor", 800);
           }
@@ -1638,24 +1630,13 @@ void checkButtons(const char* mode, unsigned long dur) {
         } else if (pressedButton == 3) {
           calibrationModeAS = true;
           displayStatus("cal", 1000);
-          uint8_t sECC[] = { 0x79, 0x39, 0x39, 0x1c };  // "ECCv" (end CCW)
-          Serial.print(F("  [endStopCCW] turns=")); Serial.println(turns);
+          uint8_t sECC[] = { 0x79, 0x39, 0x39, 0x1c };  // "ECCv" (end CCW)          
           int result = calibAS_setPhysical(sECC, 3);
           if (result != CALIB_CANCEL) {
-            endStopCCW = result - 360;
-            turns       = -1;
-            sensorAccum = (float)northOffset - 360.0;  // reset akumulace na -1 otáčku
-            lastRawSensorDeg = SENSOR_REVERSED
-              ? (float)map(analogRead(ANALOG_PIN), 0, 1023, 359, 0)
-              : (float)map(analogRead(ANALOG_PIN), 0, 1023, 0, 359);
-            lastAz = (int)readSensorAngle();
-            saveTurns();
-            saveSensorAccumForce();
+            endStopCCW = (int)readSensorAngle() - 360;
             saveEndStops();
-            Serial.print(F("AS5600 endStopCCW=")); Serial.println(endStopCCW);
-            Serial.println(F("Turns reset na -1."));
-            displayStatus("end", 1000);
-            asm volatile("  jmp 0");
+            displayStatus("set", 1000);
+            Serial.print(F("AS5600 endStopCW=")); Serial.println(endStopCW);            
           } else {
             displayStatus("abor", 800);
           }
@@ -1837,6 +1818,7 @@ void scanRun() {
     Scan_display(); return;
   }
   if (millis() < scanPauseUntil) return;
+  if (analogRead(PTT_PIN) < A6_THRESHOLD) return;   // PTT aktivní → nespouštěj další krok
 
   if (scanDirectionUp) {
     scanCurrentTarget += scanStep;
