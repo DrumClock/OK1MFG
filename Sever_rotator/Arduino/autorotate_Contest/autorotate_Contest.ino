@@ -1,5 +1,5 @@
 /*
- ###############  VERZE - 27.3.2026  #####################
+ ###############  VERZE - 9.5.2026  #####################
 
  - Ovládání motoru rotátoru pomocí H-můstku 
  - Snímání azimutu pomocí potenciometru (napěťový dělič)
@@ -75,8 +75,9 @@
     LED Mapa:
       modrá LED uržuje rozsah úhlů + animace radaru
 
-   Zrušení funkce SCAn:	  
-	 PTT vstup,   CW / CCW / encoder → "End" → normální provoz
+   Pozastavení / Zrušení funkce SCAn:
+	 PTT vstup    → "Ptt" → pozastaví pauzu (odpočet neběží dokud je PTT aktivní)
+	 CW / CCW / encoder → "End" → normální provoz
 
 */
 
@@ -467,14 +468,7 @@ void loop() {
 
   // ############################# Contest funkce #############################
   scanRun();
-    // PTT → přerušení 
-    if (scanRunning && digitalRead(PTT_PIN) == LOW) {      
-     uint8_t segTest[] = { 0x73, 0x78, 0x78, 0x00 };  // "Ptt"
-     display.setSegments(segTest, 4, 0);
-     delay(1500);
-     
-     scanStop();
-    }
+  // PTT → logika pozastavení je v scanRun(), zobrazení "Ptt" obstarává display cyklus
 
   // ############################# ovladaní rotatoru pomocí Tučňáka -Hamlib ##############################
   Hamlib_Tucnak();
@@ -569,26 +563,33 @@ void loop() {
     }
 
     // displej TM1367
-    if ((AutoRotate != -1.0 || scanRunning) && millis() - changeUpdateTime >= changeInterval) {
-      changeUpdateTime = millis();
-      displayMode = !displayMode;
-    }
-
-    if (displayMode) {
-      if (testDurationSetup > 0 && testRunning) {
-        uint8_t segTest[] = { 0x78, 0x79, 0x6D, 0x78 };  // tESt
-        display.setSegments(segTest, 4, 0);
-      } else if (scanRunning) {
-        Scan_display();  // Cont
-      } else {
-        Auto_display();  // normální provoz → "Auto"
+    // PTT má prioritu → zobraz jen "Ptt"
+    if (scanRunning && digitalRead(PTT_PIN) == LOW) {
+      uint8_t segPtt[] = { 0x73, 0x78, 0x78, 0x00 };
+      display.setSegments(segPtt, 4, 0);
+    } else {
+      // Přepínání displeje: Cont ↔ azimut
+      if ((AutoRotate != -1.0 || scanRunning) && millis() - changeUpdateTime >= changeInterval) {
+        changeUpdateTime = millis();
+        displayMode = !displayMode;
       }
-    } else if (AutoRotate != -1.0) {
-      Angle_display(AutoRotate);  // Zobrazení cílového úhlu
-    } else if (scanRunning) {
-      Angle_display(scanCurrentTarget);  // Zobrazení cílového úhlu scanu
-    } else if (!calibrationMode) {
-      Angle_display(lastAngle);  // Zobrazení úhlu antény
+
+      if (displayMode) {
+        if (testDurationSetup > 0 && testRunning) {
+          uint8_t segTest[] = { 0x78, 0x79, 0x6D, 0x78 };  // tESt
+          display.setSegments(segTest, 4, 0);
+        } else if (scanRunning) {
+          Scan_display();  // Cont
+        } else {
+          Auto_display();  // normální provoz → "Auto"
+        }
+      } else if (AutoRotate != -1.0) {
+        Angle_display(AutoRotate);  // Zobrazení cílového úhlu
+      } else if (scanRunning) {
+        Angle_display(scanCurrentTarget);  // Zobrazení cílového úhlu scanu
+      } else if (!calibrationMode) {
+        Angle_display(lastAngle);  // Zobrazení úhlu antény
+      }
     }
 
   }
@@ -1444,8 +1445,9 @@ void scanRun() {
     return;
   }
 
-  // --- čekáme na konec pauzy ---
+  // --- čekáme na konec pauzy, nebo je PTT aktivní (pozastavení) ---
   if (millis() < scanPauseUntil) return;
+  if (digitalRead(PTT_PIN) == LOW) return;   // PTT aktivní → nespouštěj další krok
 
   // --- vypočítej další krok ---
   if (scanDirectionUp) {
