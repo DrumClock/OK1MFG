@@ -1,5 +1,5 @@
 /*
-// --------------VERZE  17.5.2026 -------------
+// --------------VERZE  30.6.2026 -------------
 
  5-Stupňový PTT Sequencer s HW volbou STEP_DELAY (binární DIP, sčítání)
  Watchdog provádí nouzovou sekvenci 50ms v reverzním pořadí
@@ -14,16 +14,16 @@
 
  Výstupy sekvenceru (PTT_x = stupeň x)
     PTT_1   - LNA napájení RX nebo PTT TX  
-    PTT_2   - rezerva
-    PTT_3   - TRX - PTT
-    PTT_4   - rezerva
+    PTT_2   - LNA napájení RX nebo PTT TX  
+    PTT_3   - rezerva
+    PTT_4   - TRX - PTT
     PTT_5   - PA - PTT
 
 // ---------------------------
 */
 
 // Serial debug - zakomentuj řádek níže pro vypnutí veškerého debug výstupu
-#define DEBUG_SERIAL
+//#define DEBUG_SERIAL
 
 #ifdef DEBUG_SERIAL
   #define DBG_BEGIN(x)   Serial.begin(x)
@@ -38,12 +38,15 @@
 // PTT vstup
 #define PTT_IN 12
 
+// LED indikace režimu TX (na D13 je i palubní LED Arduina)
+#define TX_LED 13
+
 // Výstupy sekvenceru (PTT_x = stupeň x)
-#define PTT_1   10   // stupeň 1 - LNA - napájení / PTT
-#define PTT_2   9   // stupeň 2 - rezerva
-#define PTT_3   8   // stupeň 3 - TRX - PTT
-#define PTT_4   7   // stupeň 4 - rezerva
-#define PTT_5   6   // stupeň 5 - rezerva
+#define PTT_1   10   // stupeň 1 
+#define PTT_2   9   // stupeň 2 
+#define PTT_3   8   // stupeň 3 
+#define PTT_4   7   // stupeň 4 
+#define PTT_5   6   // stupeň 5 
 
 // Počet stupňů sekvenceru
 #define NUM_STAGES 5
@@ -116,6 +119,9 @@ void setup() {
   DBG_PRINTLN("========================================");
 
   pinMode(PTT_IN, INPUT_PULLUP);
+
+  pinMode(TX_LED, OUTPUT);
+  digitalWrite(TX_LED, LOW);
 
   pinMode(PTT_1, OUTPUT);
   pinMode(PTT_2, OUTPUT);
@@ -280,4 +286,9 @@ void loop() {
       }
       break;
   }
+
+  // --- Indikace TX na D13 ---
+  // Svítí po celou dobu TX aktivity: náběh, vysílání i doběh (PA shutdown).
+  // V IDLE (RX) zhasne. Po watchdog timeoutu zhasne automaticky (stav = IDLE).
+  digitalWrite(TX_LED, (seqState != IDLE) ? HIGH : LOW);
 }
