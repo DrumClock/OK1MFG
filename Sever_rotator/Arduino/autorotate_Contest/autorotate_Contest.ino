@@ -1,5 +1,5 @@
 /*
- ###############  VERZE - 9.5.2026  #####################
+ ###############  VERZE - 5.7.2026  #####################
 
  - Ovládání motoru rotátoru pomocí H-můstku 
  - Snímání azimutu pomocí potenciometru (napěťový dělič)
@@ -87,6 +87,13 @@
 // D3, D5, D6, D9-11 jako PWM piny
 
 
+// #################### uživatelské nastavení ###########################
+
+// Povolení/zakázání funkce "CQ Contest" (kyvadlové otáčení anténou mezi dvěma úhly)
+// true  = funkce Contest je aktivní (lze ji spustit dlouhým i krátkým stiskem enkodéru)
+// false = funkce Contest je zcela vypnutá (stisky enkodéru ji nespustí, "Cont" se nezobrazí)
+#define ENABLE_CONTEST false
+
 // #################### inicializace knihoven ###########################
 
 #include <Adafruit_NeoPixel.h>
@@ -147,7 +154,7 @@
 int lastPos = -1;                        // Předchozí pozice enkodéru
 int ledPos = 0;                          // Počáteční pozice pro modrou LED
 float AutoRotate = -1.0;                 // Proměnná pro uložený úhel, Počáteční hodnota -1 znamená, že úhel ještě není uložen
-const float HYSTERESIS_END_ANGLE = 5.0;  // Hystereze úhlu pro zastavení Autorotace 
+const float HYSTERESIS_END_ANGLE = 2.0;  // Hystereze úhlu pro zastavení Autorotace 
 unsigned long lastOutputChange = 0;
 unsigned long lastChangeTime = 0;         // Čas poslední změny pozice enkodéru
 const unsigned long InactiveTime = 4000;  // 4 sekund nečinnosti
@@ -639,7 +646,7 @@ if (pos != lastPos) {
     while (digitalRead(PIN_SW) == LOW) {
       if (millis() - swPressStart > 1500) {
         // dlouhý stisk → nastavení SCAN
-        if (AutoRotate == -1.0 && !scanRunning && !testRunning) {
+        if (ENABLE_CONTEST && AutoRotate == -1.0 && !scanRunning && !testRunning) {
           while (digitalRead(PIN_SW) == LOW);
           scanStart();
         }
@@ -656,7 +663,7 @@ if (pos != lastPos) {
         delay(500);
       } else {
         // enkodér nebyl otočen → restart SCAN
-        if (!testRunning && AutoRotate == -1.0 && scanAngle1 != scanAngle2) {
+        if (ENABLE_CONTEST && !testRunning && AutoRotate == -1.0 && scanAngle1 != scanAngle2) {
           scanRestart();
         }
       }
