@@ -14,3 +14,6 @@
 [![Panel](https://github.com/DrumClock/OK1MFG/blob/main/Keypad_tucnak/IMG_keypad.jpg)](https://github.com/DrumClock/OK1MFG/tree/main/Keypad_tucnak)
 
 
+# PTT Sequencer
+
+[![Panel](https://github.com/DrumClock/OK1MFG/blob/main/Sequencer/predni.jpg)](https://github.com/DrumClock/OK1MFG/tree/main/Sequencer)
