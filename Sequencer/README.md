@@ -32,7 +32,7 @@ Tím je zajištěno, že jednotlivé části zařízení jsou při přechodu mez
 
 Nastavením kombinace přepínačů lze zvolit požadovanou rychlost sekvence podle použitého zařízení.
 
-![Nastavení časového kroku](zadni.jpg)
+![Nastavení časového kroku](spodek.jpg)
 
 ## Zadní panel
 
@@ -66,15 +66,11 @@ LED indikace na předním panelu informuje o aktivním stavu sekvence.
 
 Během přechodu do TX a návratu do RX probíhá sekvence automaticky podle nastaveného časového kroku.
 
-![Přední panel – indikace](predni.jpg)
-
 ## Konstrukce
 
 Sequencer je umístěn v kompaktní skříňce s ovládacími prvky na předním panelu a konektory pro připojení na zadním panelu.
 
 ![Pohled shora](vrsek.jpg)
-
-![Spodní strana](spodek.jpg)
 
 ## Přehled projektu
 
