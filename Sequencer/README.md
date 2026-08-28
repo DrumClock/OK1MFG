@@ -26,6 +26,12 @@ PTT 5 → PTT 4 → PTT 3 → PTT 2 → PTT 1
 
 Tím je zajištěno, že jednotlivé části zařízení jsou při přechodu mezi RX a TX zapínány a vypínány v definovaném pořadí.
 
+## Zapojení 1 kanálu PTT
+
+![Zapojení](/Sequencer/KiCAD/schema.png)
+![PCB](/Sequencer/KiCAD/sequencer.jpg)
+
+
 ## Nastavení časového kroku
 
 Časový odstup mezi jednotlivými kroky se nastavuje pomocí DIP přepínačů na zadním panelu.
