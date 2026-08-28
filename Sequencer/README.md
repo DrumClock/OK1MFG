@@ -74,11 +74,12 @@ Během přechodu do TX a návratu do RX probíhá sekvence automaticky podle nas
 
 Sequencer je umístěn v kompaktní skříňce s ovládacími prvky na předním panelu a konektory pro připojení na zadním panelu.
 
-KiCAD - schéma a PCB
-![kikad](/Sequencer/KiCad)
+.[KiCAD](https://github.com/DrumClock/OK1MFG/tree/main//Sequencer/KiCad)
+- schéma a PCB
 
-FreeCad - parametrický přední a zadní panel
-![fewwcad](/Sequencer/FreeCAD)
+
+ [FreeCAD](https://github.com/DrumClock/OK1MFG/tree/main//Sequencer/FreeCAD)
+  - přední a zadní panel
 
 
 ![Pohled shora](vrsek.jpg)
