@@ -9,17 +9,15 @@ PTT sequencer pro řízení postupného zapínání a vypínání jednotlivých 
 Po aktivaci PTT sequencer postupně aktivuje jednotlivé výstupy s nastaveným časovým odstupem.
 
 ```text
-PTT ON
+PTT IN - ON
 
-PTT 1 → PTT 2 → PTT 3 → PTT 4 → PTT 5
-          │         │         │
-          └──── nastavený časový krok ────┘
+PTT 1 → PTT 2 → PTT 3 → PTT 4 → PTT 
 ```
 
 Po ukončení PTT proběhne vypnutí v opačném pořadí:
 
 ```text
-PTT OFF
+PTT IN - OFF
 
 PTT 5 → PTT 4 → PTT 3 → PTT 2 → PTT 1
 ```
@@ -34,7 +32,7 @@ Tím je zajištěno, že jednotlivé části zařízení jsou při přechodu mez
 
 ## Nastavení časového kroku
 
-Časový odstup mezi jednotlivými kroky se nastavuje pomocí DIP přepínačů na zadním panelu.
+Časový odstup mezi jednotlivými kroky se nastavuje pomocí DIP přepínačů na spodni straně krabičky.
 
 Nastavením kombinace přepínačů lze zvolit požadovanou rychlost sekvence podle použitého zařízení.
 
@@ -42,23 +40,23 @@ Nastavením kombinace přepínačů lze zvolit požadovanou rychlost sekvence po
 
 ## Zadní panel
 
-Na zadním panelu jsou umístěny vstupy a výstupy pro připojení sequenceru.
+Na zadním panelu jsou umístěny vstupy a výstupy pro připojení zarizeni.
 
 ![Zadní panel – vstupy a výstupy](zadni.jpg)
 
 ### PTT IN
 
-Vstup pro ovládací PTT signál.
+Vstup pro ovládací PTT signál (šlapka).
 
 Po aktivaci vstupu se spustí zapínací sekvence. Po jeho uvolnění proběhne vypínací sekvence v opačném pořadí.
 
-### PTT OUT
+### LNA / PTT-TX
 
 Výstupy sequenceru pro jednotlivé řízené stupně.
 
 Jednotlivé výstupy jsou aktivovány postupně podle nastaveného časového kroku.
 
-## Ovládání LNA
+## Ovládání LNA ( vypínač)
 
 Na předním panelu je samostatný vypínač **LNA**.
 
@@ -76,6 +74,13 @@ Během přechodu do TX a návratu do RX probíhá sekvence automaticky podle nas
 
 Sequencer je umístěn v kompaktní skříňce s ovládacími prvky na předním panelu a konektory pro připojení na zadním panelu.
 
+KiCAD - schéma a PCB
+![kikad](/Sequencer/KiCad)
+
+FreeCad - parametrický přední a zadní panel
+![fewwcad](/Sequencer/FreeCAD)
+
+
 ![Pohled shora](vrsek.jpg)
 
 ## Přehled projektu
@@ -87,5 +92,3 @@ Součástí projektu jsou také konstrukční podklady PCB a čelního panelu.
 ![Izometrický pohled](iso2.jpg)
 
 ---
-
-**PTT Sequencer – OK1MFG**
