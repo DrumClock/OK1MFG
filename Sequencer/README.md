@@ -80,6 +80,7 @@ Během přechodu do TX a návratu do RX probíhá sekvence automaticky podle nas
 # 🔴 [FreeCAD](https://github.com/DrumClock/OK1MFG/tree/main/Sequencer/FreeCAD) - přední a zadní panel
 
 Sequencer je umístěn v plastové krabičce KM60 159x60x140mm, prodejce [HADEX](https://www.hadex.cz/p/o208b-krabicka-plastova-km60-159x60x140mm?searchLogID=1625557)
+,pokud by se již nevyráběla je také ve složce soubor pro FreeCAD.
 
 Přední a zadní panel k této krabičce je možné parametrovat v programu FreeCAD.
 
