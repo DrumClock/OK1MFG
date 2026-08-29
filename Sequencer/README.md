@@ -87,7 +87,7 @@ Přední a zadní panel k této krabičce je možné parametrovat v programu Fre
 
 
 # Provedení
-
+# Popisky - přiložené soubor **`sequencer_label.cdr`** je pro grafický editor **`CorelDraw`** 
 
 ![Pohled shora](vrsek.jpg)
 
