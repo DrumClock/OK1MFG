@@ -1,17 +1,17 @@
-# PTT Sequencer
+# 5-WAY PTT Sequencer
 
-PTT sequencer pro řízení postupného zapínání a vypínání jednotlivých částí zařízení.
+Sequencer pro řízení postupného zapínání a vypínání jednotlivých částí zařízení.
 
 ![PTT Sequencer – přední strana](predni.jpg)
 
-## Princip činnosti
 
+## [Arduino](https://github.com/DrumClock/OK1MFG/tree/main/Sequencer/Arduino/5CH_sequencer.ino) - program
 Po aktivaci PTT sequencer postupně aktivuje jednotlivé výstupy s nastaveným časovým odstupem.
 
 ```text
 PTT IN - ON
 
-PTT 1 → PTT 2 → PTT 3 → PTT 4 → PTT 
+PTT 1 → PTT 2 → PTT 3 → PTT 4 → PTT  5
 ```
 
 Po ukončení PTT proběhne vypnutí v opačném pořadí:
@@ -24,19 +24,20 @@ PTT 5 → PTT 4 → PTT 3 → PTT 2 → PTT 1
 
 Tím je zajištěno, že jednotlivé části zařízení jsou při přechodu mezi RX a TX zapínány a vypínány v definovaném pořadí.
 
-## Zapojení 1 kanálu PTT
+## [KiCAD](https://github.com/DrumClock/OK1MFG/tree/main/Sequencer/KiCAD) - schéma kanálu LNA / PTT
 
 ![Zapojení](/Sequencer/KiCAD/schema.png)
+
 ![PCB](/Sequencer/KiCAD/sequencer.jpg)
 
 
-## Nastavení časového kroku
+## Nastavení DELAY SEQ TIME
 
-Časový odstup mezi jednotlivými kroky se nastavuje pomocí DIP přepínačů na spodni straně krabičky.
-
+Časový odstup mezi jednotlivými kroky se nastavuje pomocí DIP přepínačů na spodní straně krabičky.
 Nastavením kombinace přepínačů lze zvolit požadovanou rychlost sekvence podle použitého zařízení.
 
 ![Nastavení časového kroku](spodek.jpg)
+
 
 ## Zadní panel
 
@@ -47,46 +48,47 @@ Na zadním panelu jsou umístěny vstupy a výstupy pro připojení zarizeni.
 ### PTT IN
 
 Vstup pro ovládací PTT signál (šlapka).
-
-Po aktivaci vstupu se spustí zapínací sekvence. Po jeho uvolnění proběhne vypínací sekvence v opačném pořadí.
+Po aktivaci vstupu se spustí zapínací sekvence. 
+Po jeho uvolnění proběhne vypínací sekvence v opačném pořadí.
 
 ### LNA / PTT-TX
 
 Výstupy sequenceru pro jednotlivé řízené stupně.
-
 Jednotlivé výstupy jsou aktivovány postupně podle nastaveného časového kroku.
 
-## Ovládání LNA ( vypínač)
+### 12V DC
+Vstup napájení 12V DC / LNA 1 je společný i pro a elektroniku sequenceru.
+Další vstupy DC napájí jen tento kanál LNA. ( na obrátku vstup 12V DC napájí jak elektroniku tak LNA 1 a 2 )
 
-Na předním panelu je samostatný vypínač **LNA**.
+## Přední panel
 
-Vypínač **LNA odpojuje napájení pouze pro předzesilovače (LNA)**. Nemá vliv na napájení ostatních částí zařízení.
+## Vypínač LNA 
+
+Na předním panelu je samostatný vypínač, který
+**odpojuje napájení pouze pro předzesilovače LNA**.
+Nemá vliv na napájení ostatních částí zařízení.
 
 ![Přední panel – ovládání LNA](predni.jpg)
 
 ## Indikace
 
-LED indikace na předním panelu informuje o aktivním stavu sekvence.
-
+LED indikace na předním panelu informuje o aktivním stavu RX/TX sekvence.
 Během přechodu do TX a návratu do RX probíhá sekvence automaticky podle nastaveného časového kroku.
 
-## Konstrukce
 
-Sequencer je umístěn v kompaktní skříňce s ovládacími prvky na předním panelu a konektory pro připojení na zadním panelu.
+## [FreeCAD](https://github.com/DrumClock/OK1MFG/tree/main/Sequencer/FreeCAD) - přední a zadní panel
 
-[KiCAD](https://github.com/DrumClock/OK1MFG/tree/main/Sequencer/KiCAD)
-- schéma a PCB
+Sequencer je umístěn v plastové krabičce KM60 159x60x140mm, prodejce [HADEX](https://www.hadex.cz/p/o208b-krabicka-plastova-km60-159x60x140mm?searchLogID=1625557)
+
+Přední a zadní panel k této krabičce je možné parametrovat v programu FreeCAD.
+
+![parametrování](/Sequencer/FreeCAD/VarSet.jpg)
 
 
- [FreeCAD](https://github.com/DrumClock/OK1MFG/tree/main/Sequencer/FreeCAD)
-  - přední a zadní panel
+## Provedení
 
 
 ![Pohled shora](vrsek.jpg)
-
-## Přehled projektu
-
-Součástí projektu jsou také konstrukční podklady PCB a čelního panelu.
 
 ![Izometrický pohled](iso1.jpg)
 
