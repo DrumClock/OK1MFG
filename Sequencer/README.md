@@ -5,7 +5,7 @@ Sequencer pro řízení postupného zapínání a vypínání jednotlivých čá
 ![PTT Sequencer – přední strana](predni.jpg)
 
 
-# [Arduino](https://github.com/DrumClock/OK1MFG/tree/main/Sequencer/Arduino/5CH_sequencer.ino) - program
+# 🔴 [Arduino](https://github.com/DrumClock/OK1MFG/tree/main/Sequencer/Arduino/5CH_sequencer.ino) - program
 Po aktivaci PTT sequencer postupně aktivuje jednotlivé výstupy s nastaveným časovým odstupem.
 
 ```text
@@ -23,7 +23,7 @@ PTT 5 → PTT 4 → PTT 3 → PTT 2 → PTT 1
 ```
 Tím je zajištěno, že jednotlivé části zařízení jsou při přechodu mezi RX a TX zapínány a vypínány v definovaném pořadí.
 
-## Nastavení DELAY SEQ TIME
+# 🔴 Nastavení DELAY SEQ TIME
 
 Časový odstup mezi jednotlivými kroky se nastavuje pomocí DIP přepínačů na spodní straně krabičky.
 Nastavením kombinace přepínačů lze zvolit požadovanou rychlost sekvence podle použitého zařízení.
@@ -31,14 +31,14 @@ Nastavením kombinace přepínačů lze zvolit požadovanou rychlost sekvence po
 ![Nastavení časového kroku](spodek.jpg)
 
 
-# [KiCAD](https://github.com/DrumClock/OK1MFG/tree/main/Sequencer/KiCAD) - schéma kanálu LNA / PTT
+# 🔴 [KiCAD](https://github.com/DrumClock/OK1MFG/tree/main/Sequencer/KiCAD) - schéma kanálu LNA / PTT
 
 ![Zapojení](/Sequencer/KiCAD/schema.png)
 
 ![PCB](/Sequencer/KiCAD/sequencer.jpg)
 
 
-# Zadní panel
+# 🔴 Zadní panel
 
 Na zadním panelu jsou umístěny vstupy a výstupy pro připojení zarizeni.
 
@@ -61,7 +61,7 @@ Po jeho uvolnění proběhne vypínací sekvence v opačném pořadí.
 Vstup napájení 12V DC / LNA 1 je společný i pro a elektroniku sequenceru.
 Další vstupy DC napájí jen tento kanál LNA. ( na obrátku vstup 12V DC napájí jak elektroniku tak LNA 1 a 2 )
 
-# Přední panel
+# 🔴 Přední panel
 
 ## Vypínač LNA 
 
@@ -77,7 +77,7 @@ LED indikace na předním panelu informuje o aktivním stavu RX/TX sekvence.
 Během přechodu do TX a návratu do RX probíhá sekvence automaticky podle nastaveného časového kroku.
 
 
-# [FreeCAD](https://github.com/DrumClock/OK1MFG/tree/main/Sequencer/FreeCAD) - přední a zadní panel
+# 🔴 [FreeCAD](https://github.com/DrumClock/OK1MFG/tree/main/Sequencer/FreeCAD) - přední a zadní panel
 
 Sequencer je umístěn v plastové krabičce KM60 159x60x140mm, prodejce [HADEX](https://www.hadex.cz/p/o208b-krabicka-plastova-km60-159x60x140mm?searchLogID=1625557)
 
@@ -86,7 +86,7 @@ Přední a zadní panel k této krabičce je možné parametrovat v programu Fre
 ![parametrování](/Sequencer/FreeCAD/VarSet.jpg)
 
 
-# [Popisky](https://github.com/DrumClock/OK1MFG/tree/main/Sequencer/popisky) - samolepky ve formátu PDF, PNG, CDR (CorelDraw)
+# 🔴 [Popisky](https://github.com/DrumClock/OK1MFG/tree/main/Sequencer/popisky) - samolepky ve formátu PDF, PNG, CDR (CorelDraw)
 
 ![Pohled shora](vrsek.jpg)
 
