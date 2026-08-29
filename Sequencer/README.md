@@ -45,15 +45,17 @@ Na zadním panelu jsou umístěny vstupy a výstupy pro připojení zarizeni.
 ![Zadní panel – vstupy a výstupy](zadni.jpg)
 
 ### PTT IN
-
-Vstup pro ovládací PTT signál (šlapka).
+Vstup pro ovládací PTT signál (šlapka proti GND).
 Po aktivaci vstupu se spustí zapínací sekvence. 
 Po jeho uvolnění proběhne vypínací sekvence v opačném pořadí.
 
-### LNA / PTT-TX
+###  PTT-TX
+- RX je pin konektoru RCA ve stavu "otevřeného kolektoru" 
+- TX je uzemněn pin konektoru RCA
 
-Výstupy sequenceru pro jednotlivé řízené stupně.
-Jednotlivé výstupy jsou aktivovány postupně podle nastaveného časového kroku.
+### LNA 
+- RX je přivedeno napájení 12V na pin 1 (+LNA RX) konektoru GX
+- TX je je uzemněn pin 2 (PTT TX) konektoru GX
 
 ### 12V DC
 Vstup napájení 12V DC / LNA 1 je společný i pro a elektroniku sequenceru.
@@ -75,7 +77,7 @@ LED indikace na předním panelu informuje o aktivním stavu RX/TX sekvence.
 Během přechodu do TX a návratu do RX probíhá sekvence automaticky podle nastaveného časového kroku.
 
 
-## [FreeCAD](https://github.com/DrumClock/OK1MFG/tree/main/Sequencer/FreeCAD) - přední a zadní panel
+# [FreeCAD](https://github.com/DrumClock/OK1MFG/tree/main/Sequencer/FreeCAD) - přední a zadní panel
 
 Sequencer je umístěn v plastové krabičce KM60 159x60x140mm, prodejce [HADEX](https://www.hadex.cz/p/o208b-krabicka-plastova-km60-159x60x140mm?searchLogID=1625557)
 
