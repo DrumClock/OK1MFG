@@ -86,8 +86,7 @@ Přední a zadní panel k této krabičce je možné parametrovat v programu Fre
 ![parametrování](/Sequencer/FreeCAD/VarSet.jpg)
 
 
-# Provedení
-# Popisky - přiložené soubor **`sequencer_label.cdr`** je pro grafický editor **`CorelDraw`** 
+# [Popisky](https://github.com/DrumClock/OK1MFG/tree/main/Sequencer/popisky) - samolepky ve formátu PDF, PNG, CDR (CorelDraw)
 
 ![Pohled shora](vrsek.jpg)
 
